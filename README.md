@@ -2,9 +2,9 @@
 `PID_Py` provide a PID controller wrote in Python. This PID controller is simple to use, but it's complete.
 
 ## Installation
-Installation via [pip](https://pip.pypa.io/en/stable/) is not already possible. I haven't done this part, i will do it soon.
-
-For now if you want to use `PID_Py` you can simply copy package folder in your project and then import it.
+```Shell
+python3 -m pip install PID_Py
+```
 
 ## Usage
 ### Minimum usage 
