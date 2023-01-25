@@ -1,2 +1,4 @@
-__version__ = "0.1.4"
+import importlib.metadata
+
+__version__ = importlib.metadata.version("PID_Py")
 __author__ = "ThunderTecke"
