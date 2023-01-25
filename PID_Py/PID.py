@@ -100,6 +100,11 @@ class PID:
 
         self.outputLimits = outputLimits
 
+        # Manual mode
+        self.manualMode = False
+        self.manualValue = 0.0
+        self.bumplessSwitching = True
+
         # Historian setup
         self.historianParams = historianParams
         self.historian = {}
@@ -156,34 +161,46 @@ class PID:
             Return the PID output (same as `self.output`)
         """
         if self._startTime is not None and self._lastTime is not None:
-            # ===== Error calculation =====
-            if self.indirectAction:
-                error = processValue - setpoint
-            else:
-                error = setpoint - processValue
-            
-            # ===== Delta time =====
-            actualTime = time.time()
-            deltaTime = actualTime - self._lastTime
-            
-            # ===== Proportionnal part =====
-            p = error * self.kp
+            if (self.manualMode):
+                # ========== Manual mode ==========
+                _output = self.manualValue
 
-            # ===== Integral part =====
-            self._i += ((error + self._lastError) / 2.0) * deltaTime * self.ki
+                # ========== End of manual mode ==========
+            else: 
+                # ========== Automatic mode ==========
+                # ===== Error calculation =====
+                if self.indirectAction:
+                    error = processValue - setpoint
+                else:
+                    error = setpoint - processValue
+                
+                # ===== Delta time =====
+                actualTime = time.time()
+                deltaTime = actualTime - self._lastTime
+                
+                # ===== Proportionnal part =====
+                p = error * self.kp
 
-            # Integral part limitation
-            if self.integralLimit is not None:
-                if self._i > self.integralLimit:
-                    self._i = self.integralLimit
-                elif self._i < -self.integralLimit:
-                    self._i = -self.integralLimit
-            
-            # ===== Derivative part =====
-            d = ((error - self._lastError) / deltaTime) * self.kd
-            
-            # ===== Output =====
-            _output = p + self._i + d
+                # ===== Integral part =====
+                self._i += ((error + self._lastError) / 2.0) * deltaTime * self.ki
+
+                # Integral part limitation
+                if self.integralLimit is not None:
+                    if self._i > self.integralLimit:
+                        self._i = self.integralLimit
+                    elif self._i < -self.integralLimit:
+                        self._i = -self.integralLimit
+                
+                # ===== Derivative part =====
+                d = ((error - self._lastError) / deltaTime) * self.kd
+                
+                # ===== Output =====
+                _output = p + self._i + d
+
+                # ===== Bumpless manual value =====
+                self.manualValue = _output
+
+                # ========== End of automatic mode ==========
 
             # Output limitation
             if self.outputLimits is not None:
@@ -192,7 +209,7 @@ class PID:
                         _output = self.outputLimits[0]
                 if self.outputLimits[1] is not None:
                     if _output > self.outputLimits[1]:
-                        _output = self.outputLimits[1]    
+                        _output = self.outputLimits[1]
 
             # ===== Historian =====
             if HistorianParams.P in self.historianParams:
@@ -228,3 +245,6 @@ class PID:
         else: # First execution
             self._startTime = time.time()
             self._lastTime = time.time()
+
+            self.output = 0.0
+            return 0.0
