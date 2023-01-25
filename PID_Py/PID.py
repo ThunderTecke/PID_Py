@@ -16,6 +16,78 @@ class HistorianParams(Flag):
     ERROR = auto()
 
 class PID:
+    """
+    PID controller base class.
+
+    Parameters
+    ----------
+    kp: float
+        Proportionnal gain
+    
+    ki: float
+        Integral gain
+    
+    kd: float
+        Derivative gain
+    
+    indirectAction: bool, default = False
+        Invert PID action. Direct action (False) -> error = setpoint - processValue, Indirect action (True) -> error = processValue - setpoint.
+        This option implies that when error is increasing the output is decreasing.
+    
+    integralLimit: float, default = None
+        Limit the integral part. When this value is set to None, the integral part is not limited.
+        The integral part is clamped between -`integralLimit` and +`integralLimit`.
+    
+    historianParams: HistorianParams, default = None
+        Configure historian to record some value of the PID. When at least one value is recorded, time is recorded too.
+        Possible value :
+            - HistorianParams.P : Proportionnal part
+            - HistorianParams.I : Integral part
+            - HistorianParams.D : Derivative part
+            - HistorianParams.ERROR : PID error
+            - HistorianParams.SETPOINT : PID setpoint
+            - HistorianParams.PROCESS_VALUE : PID process value
+            - HistorianParams.OUTPUT : PID output
+    
+    outputLimits: tuple[float, float], default = (None, None)
+        Limit the output between a minimum and a maximum (min, max).
+        If a limit is set to None, the limit is deactivated.
+        If `outputLimit` is set to None, there is no limits.
+    
+    Attributes
+    ----------
+    kp: float
+        Same as `kp` in parameters section
+    
+    ki: float
+        Same as `ki` in parameters section
+    
+    kd: float
+        Same as `kd` in parameters section
+    
+    indirectAction: float
+        Same as `indirectAction` in parameters section
+    
+    integralLimit: float
+        Same as `integralLimit` in parameters section
+    
+    outputLimits: float
+        Same as `outputLimits` in parameters section
+
+    historianParams: HistorianParams
+        Same as `historianParams` in parameters section
+    
+    historian: dict[str, list]
+        PID value recorded
+    
+    output: float
+        PID output
+    
+    Methods
+    -------
+    __call__(processValue, setpoint)
+        Execution PID calculation. Return `output`
+    """
     def __init__(self, kp: float, ki: float, kd: float, indirectAction: bool = False, integralLimit: float = None, historianParams: HistorianParams = None, outputLimits: tuple[float, float] = (None, None)) -> None:
         # PID parameters
         self.kp = kp
