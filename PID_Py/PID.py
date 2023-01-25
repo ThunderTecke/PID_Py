@@ -139,6 +139,22 @@ class PID:
         self.output = 0.0
     
     def __call__(self, processValue: float, setpoint: float) -> float:
+        """
+        PID calculation execution
+
+        Parameters
+        ----------
+        processValue: float
+            The actual system feedback
+        
+        setpoint: float
+            The target value for the PID
+        
+        Returns
+        -------
+        float
+            Return the PID output (same as `self.output`)
+        """
         if self._startTime is not None and self._lastTime is not None:
             # ===== Error calculation =====
             if self.indirectAction:
