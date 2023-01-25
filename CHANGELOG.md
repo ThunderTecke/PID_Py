@@ -4,6 +4,7 @@
 ### Added
 - PID class documentation
 - PID_Py/__init__.py change
+- Manual mode added
 
 ### Modififed
 
