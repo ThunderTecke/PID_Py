@@ -3,6 +3,7 @@
 ## [0.1.4] - 2023-01-25
 ### Added
 - PID class documentation
+- PID_Py/__init__.py change
 
 ### Modififed
 
