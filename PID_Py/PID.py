@@ -161,9 +161,18 @@ class PID:
             Return the PID output (same as `self.output`)
         """
         if self._startTime is not None and self._lastTime is not None:
+            actualTime = time.time()
+
             if (self.manualMode):
                 # ========== Manual mode ==========
                 _output = self.manualValue
+                p = 0.0
+
+                if (self.bumplessSwitching):
+                    self._i = 0.0
+
+                d = 0.0
+                error = 0.0
 
                 # ========== End of manual mode ==========
             else: 
@@ -175,7 +184,6 @@ class PID:
                     error = setpoint - processValue
                 
                 # ===== Delta time =====
-                actualTime = time.time()
                 deltaTime = actualTime - self._lastTime
                 
                 # ===== Proportionnal part =====

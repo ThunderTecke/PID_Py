@@ -17,8 +17,18 @@ print("Start...")
 print(f"This will be take {timeLenght} secondes")
 
 while time.time() - startTime < timeLenght:
-    if time.time() - startTime > 1.0:
+    if time.time() - startTime >= 1.0:
         setpoint = 10.0
+    
+    if time.time() - startTime >= 5.0:
+        pid.manualMode = True
+    
+    if time.time() - startTime >= 6.0:
+        pid.manualValue = 2.0
+        setpoint = 5.0
+    
+    if time.time() - startTime >= 8.0:
+        pid.manualMode = False
     
     system(pid(system.output, setpoint))
 
