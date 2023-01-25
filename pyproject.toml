@@ -2,6 +2,9 @@
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools]
+packages = ["PID_Py"]
+
 [project]
 name = "PID_Py"
 version = "0.1.4"
@@ -21,6 +24,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+
 
 [project.urls]
 "Homepage" = "https://github.com/ThunderTecke/PID_Py"
