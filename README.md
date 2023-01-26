@@ -1,6 +1,9 @@
 # PID_Py
 `PID_Py` provide a PID controller wrote in Python. This PID controller is simple to use, but it's complete.
 
+## :bangbang: Non-responsability :bangbang:
+***<span style="color:red">I am not responsible for any material or personal damages in case of failure. Use at your own risk.</span>***
+
 ## Installation
 ```
 python3 -m pip install PID_Py
@@ -109,3 +112,30 @@ command = pid(processValue = feedback, setpoint = targetValue)
 ```
 
 In the example above, the integral part of the PID is clamped between -20 and 20.
+
+### Manual mode
+The PID can be switch in manual mode, this allow to operate output directly through `manualValue`.
+
+```Python
+from PID_Py.PID import PID
+
+# Initialization
+pid = PID(kp = 0.0, ki = 0.0, kd = 0.0)
+
+...
+
+# Manual mode
+pid.manualMode = True
+pid.manualValue = 12.7
+
+...
+
+# PID execution (call it as fast as you can)
+command = pid(processValue = feedback, setpoint = targetValue)
+```
+
+In the example above, command will be always equal to 12.7. The PID calculation is no longer executed. The proportionnal, integral and derivative parts still at the same value to avoid bump when switching back to automatic.
+
+To avoid bump when switching in manual there is `bumplessSwitching` attribute. This attributes keep `manualValue` equal to `output`. 
+
+If you disable this function you will have bump when you switch in manual mode with `manualValue` different of `output`. If this case you can **destabilise** (:heavy_exclamation_mark:) your system. Be careful

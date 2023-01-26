@@ -83,6 +83,20 @@ class PID:
     output: float
         PID output
     
+    manualMode: bool
+        Activate manual mode. In manual mode `output` is directly written by `manualValue` (limitations are always active).
+        PID calculation is no longer executed in manual mode.
+        Default value : False
+    
+    manualValue: float
+        In manual mode `output` is directly written by `manualValue` (limitations are always active).
+    
+    bumplessSwitching: bool
+        If `bumplessSwitching` is activate, in automatic mode `manualValue` is written by `output` to avoid bump when the manual mode is activated.
+        When automatic mode is activated, the PID calculation restart and take setpoint.
+        Bump can occur if the setpoint is too far from process value when automatic mode is reactivated.
+        Default value : True
+    
     Methods
     -------
     __call__(processValue, setpoint)
@@ -138,7 +152,9 @@ class PID:
         self._lastError = 0.0
         self._startTime = None
 
+        self._p = 0.0
         self._i = 0.0
+        self._d = 0.0
 
         # Output
         self.output = 0.0
@@ -166,12 +182,6 @@ class PID:
             if (self.manualMode):
                 # ========== Manual mode ==========
                 _output = self.manualValue
-                p = 0.0
-
-                if (self.bumplessSwitching):
-                    self._i = 0.0
-
-                d = 0.0
                 error = 0.0
 
                 # ========== End of manual mode ==========
@@ -187,7 +197,7 @@ class PID:
                 deltaTime = actualTime - self._lastTime
                 
                 # ===== Proportionnal part =====
-                p = error * self.kp
+                self._p = error * self.kp
 
                 # ===== Integral part =====
                 self._i += ((error + self._lastError) / 2.0) * deltaTime * self.ki
@@ -200,13 +210,14 @@ class PID:
                         self._i = -self.integralLimit
                 
                 # ===== Derivative part =====
-                d = ((error - self._lastError) / deltaTime) * self.kd
+                self._d = ((error - self._lastError) / deltaTime) * self.kd
                 
                 # ===== Output =====
-                _output = p + self._i + d
+                _output = self._p + self._i + self._d
 
                 # ===== Bumpless manual value =====
-                self.manualValue = _output
+                if (self.bumplessSwitching):
+                    self.manualValue = _output
 
                 # ========== End of automatic mode ==========
 
@@ -221,13 +232,13 @@ class PID:
 
             # ===== Historian =====
             if HistorianParams.P in self.historianParams:
-                self.historian["P"].append(p)
+                self.historian["P"].append(self._p)
             
             if HistorianParams.I in self.historianParams:
                 self.historian["I"].append(self._i)
 
             if HistorianParams.D in self.historianParams:
-                self.historian["D"].append(d)
+                self.historian["D"].append(self._d)
             
             if HistorianParams.OUTPUT in self.historianParams:
                 self.historian["OUTPUT"].append(_output)
