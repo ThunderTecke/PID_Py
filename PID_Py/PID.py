@@ -1,5 +1,6 @@
 import time
 from enum import Flag, auto
+from threading import Thread
 
 class HistorianParams(Flag):
     """
@@ -99,8 +100,11 @@ class PID:
     
     Methods
     -------
+    compute(processValue, setpoint)
+        Execution PID calculation. Return `output`.
+
     __call__(processValue, setpoint)
-        Execution PID calculation. Return `output`
+        call `compute`.
     """
     def __init__(self, kp: float, ki: float, kd: float, indirectAction: bool = False, integralLimit: float = None, historianParams: HistorianParams = None, outputLimits: tuple[float, float] = (None, None)) -> None:
         # PID parameters
@@ -159,7 +163,7 @@ class PID:
         # Output
         self.output = 0.0
     
-    def __call__(self, processValue: float, setpoint: float) -> float:
+    def compute(self, processValue: float, setpoint: float) -> float:
         """
         PID calculation execution
 
@@ -267,3 +271,30 @@ class PID:
 
             self.output = 0.0
             return 0.0
+
+    def __call__(self, processValue: float, setpoint: float) -> float:
+        return self.compute(processValue, setpoint)
+        
+
+class ThreadedPID(PID, Thread):
+    def __init__(self, kp: float, ki: float, kd: float, indirectAction: bool = False, integralLimit: float = None, historianParams: HistorianParams = None, outputLimits: tuple[float, float] = (None, None), cycleTime: float = 0.0) -> None:
+        PID.__init__(self, kp, ki, kd, indirectAction, integralLimit, historianParams, outputLimits)
+        Thread.__init__(self)
+
+        self.setpoint = 0.0
+        self.processValue = 0.0
+        self.cycleTime = cycleTime
+
+        self.quit = False
+    
+    def start(self) -> None:
+        # Call PID execution to initialize time memory
+        self.compute(self.processValue, self.setpoint)
+        return Thread.start(self)
+    
+    def run(self):
+        while self.quit is False:
+            while time.time() < (self._lastTime + self.cycleTime):
+                time.sleep(self.cycleTime / 100.0)
+
+            self.compute(self.processValue, self.setpoint)

@@ -5,7 +5,7 @@ from PID_Py.PID import HistorianParams as HistParams
 import time
 import matplotlib.pyplot as plt
 
-pid = PID.PID(kp = 1.0, ki = 1.0, kd = 0.0, historianParams=(HistParams.ERROR | HistParams.OUTPUT | HistParams.PROCESS_VALUE | HistParams.SETPOINT | HistParams.P | HistParams.I | HistParams.D))
+pid = PID.ThreadedPID(kp = 1.0, ki = 1.0, kd = 0.0, historianParams=(HistParams.ERROR | HistParams.OUTPUT | HistParams.PROCESS_VALUE | HistParams.SETPOINT | HistParams.P | HistParams.I | HistParams.D))
 system = Sim.Simulation(1.0, 0.1)
 
 startTime = time.time()
@@ -16,9 +16,11 @@ timeLenght = 20.0
 print("Start...")
 print(f"This will be take {timeLenght} secondes")
 
+pid.start()
+
 while time.time() - startTime < timeLenght:
     if time.time() - startTime >= 1.0:
-        setpoint = 10.0
+        pid.setpoint = 10.0
     
     if time.time() - startTime >= 5.0:
         pid.manualMode = True
@@ -29,9 +31,13 @@ while time.time() - startTime < timeLenght:
     if time.time() - startTime >= 8.0:
         pid.manualMode = False
     
-    system(pid(system.output, setpoint))
+    pid.processValue = system.output
+    system(pid.output)
 
     time.sleep(0.001)
+
+pid.quit = True
+pid.join()
 
 fig, (systemPlot, pidPlot, outputPlot) = plt.subplots(3, sharex=True)
 
