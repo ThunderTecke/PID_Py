@@ -146,3 +146,31 @@ In the example above, command will be always equal to 12.7. The PID calculation 
 To avoid bump when switching in manual there is `bumplessSwitching` attribute. This attributes keep `manualValue` equal to `output`. 
 
 If you disable this function you will have bump when you switch in manual mode with `manualValue` different of `output`. If this case you can **destabilise** (:heavy_exclamation_mark:) your system. Be careful
+
+### Threaded PID
+With the threaded PID you don't have to call `pid(processValue, setpoint)`. It's call as fast as possible or with a constant cycle time. When you want to stop the PID use `quit` attribute to finish the current execution and exit. 
+
+```Python
+from PID_Py.PID import ThreadedPID
+
+# Initialization
+pid = ThreadedPID(kp = 0.0, ki = 0.0, kd = 0.0, cycleTime = 0.01)
+pid.start()
+
+...
+
+# PID inputs
+pid.setpoint = targetValue
+pid.processValue = feedback
+
+# PID output
+command = pid.output
+
+...
+
+# Stop PID
+pid.quit = True
+pid.join()
+```
+
+In the example above the threaded PID is created with 10ms (0.01s) of cyclic time. It means that the calculation is executed each 10ms.

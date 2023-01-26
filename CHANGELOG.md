@@ -1,5 +1,13 @@
 # Change log
 
+## [0.2.0] - 2023-01-26
+### Added
+- Threaded PID class implementation
+
+### Modififed
+
+### Fixed
+
 ## [0.1.5] - 2023-01-26
 ### Added
 - Class documentation on manual mode
