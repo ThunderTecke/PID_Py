@@ -34,7 +34,7 @@ while time.time() - startTime < timeLenght:
 
     time.sleep(0.001)
 
-fig, (systemPlot, pidPlot) = plt.subplots(2, sharex=True)
+fig, (systemPlot, pidPlot, outputPlot) = plt.subplots(3, sharex=True)
 
 systemPlot.plot(pid.historian["TIME"], pid.historian["SETPOINT"], label="Setpoint")
 systemPlot.plot(pid.historian["TIME"], pid.historian["PROCESS_VALUE"], label="Process value")
@@ -45,5 +45,8 @@ pidPlot.plot(pid.historian["TIME"], pid.historian["P"], label="P")
 pidPlot.plot(pid.historian["TIME"], pid.historian["I"], label="I")
 pidPlot.plot(pid.historian["TIME"], pid.historian["D"], label="D")
 pidPlot.legend()
+
+outputPlot.plot(pid.historian["TIME"], pid.historian["OUTPUT"], label="Output")
+outputPlot.legend()
 
 plt.show()
