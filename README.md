@@ -1,3 +1,10 @@
+[![GitHub](https://img.shields.io/github/license/ThunderTecke/PID_Py)](https://github.com/ThunderTecke/PID_Py/blob/develop/LICENSE)
+[![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/ThunderTecke/PID_Py)](https://github.com/ThunderTecke/PID_Py/releases)
+[![GitHub Release Date](https://img.shields.io/github/release-date/ThunderTecke/PID_Py)](https://github.com/ThunderTecke/PID_Py/releases)
+[![GitHub last commit](https://img.shields.io/github/last-commit/ThunderTecke/PID_Py)](https://github.com/ThunderTecke/PID_Py/commits)
+[![GitHub issues](https://img.shields.io/github/issues/ThunderTecke/PID_Py)](https://github.com/ThunderTecke/PID_Py/issues)
+![Python version](https://img.shields.io/badge/Python-v3.10-blue)
+
 # PID_Py
 `PID_Py` provide a PID controller wrote in Python. This PID controller is simple to use, but it's complete.
 
