@@ -51,6 +51,9 @@ class PID:
             - HistorianParams.PROCESS_VALUE : PID process value
             - HistorianParams.OUTPUT : PID output
     
+    historianLenght: int, default = 100000
+        The maximum lenght of the historian. When the limit is reached, remove the oldest element.
+    
     outputLimits: tuple[float, float], default = (None, None)
         Limit the output between a minimum and a maximum (min, max).
         If a limit is set to None, the limit is deactivated.
@@ -86,6 +89,9 @@ class PID:
     historian: dict[str, list]
         PID value recorded
     
+    historianLenght: int
+        Same as `historianLenght` in parameters section.
+    
     output: float
         PID output
     
@@ -114,7 +120,7 @@ class PID:
     __call__(processValue, setpoint)
         call `compute`. Is a code simplification.
     """
-    def __init__(self, kp: float, ki: float, kd: float, indirectAction: bool = False, integralLimit: float = None, historianParams: HistorianParams = None, outputLimits: tuple[float, float] = (None, None), logger: logging.Logger = None) -> None:
+    def __init__(self, kp: float, ki: float, kd: float, indirectAction: bool = False, integralLimit: float = None, historianParams: HistorianParams = None, historianLenght: int = 100000, outputLimits: tuple[float, float] = (None, None), logger: logging.Logger = None) -> None:
         # PID parameters
         self.kp = kp
         self.ki = ki
@@ -134,6 +140,11 @@ class PID:
         # Historian setup
         self.historianParams = historianParams
         self.historian = {}
+
+        if (historianLenght <= 0):
+            raise ValueError("`historianLenght` can't be 0 or negative!")
+
+        self.historianLenght = historianLenght
         
         if HistorianParams.P in self.historianParams:
             self.historian["P"] = []
@@ -185,7 +196,6 @@ class PID:
         self.outputLimitsReached = False
         self.memoutputLimitsReached = False
 
-    
     def compute(self, processValue: float, setpoint: float) -> float:
         """
         PID calculation execution
@@ -297,27 +307,51 @@ class PID:
             # ===== Historian =====
             if HistorianParams.P in self.historianParams:
                 self.historian["P"].append(self._p)
+                
+                if len(self.historian["P"]) > self.historianLenght:
+                    del self.historianLenght["P"][0]
             
             if HistorianParams.I in self.historianParams:
                 self.historian["I"].append(self._i)
+                
+                if len(self.historian["I"]) > self.historianLenght:
+                    del self.historianLenght["I"][0]
 
             if HistorianParams.D in self.historianParams:
                 self.historian["D"].append(self._d)
+                
+                if len(self.historian["D"]) > self.historianLenght:
+                    del self.historianLenght["D"][0]
             
             if HistorianParams.OUTPUT in self.historianParams:
                 self.historian["OUTPUT"].append(_output)
+                
+                if len(self.historian["OUTPUT"]) > self.historianLenght:
+                    del self.historianLenght["OUTPUT"][0]
             
             if HistorianParams.SETPOINT in self.historianParams:
                 self.historian["SETPOINT"].append(setpoint)
+                
+                if len(self.historian["SETPOINT"]) > self.historianLenght:
+                    del self.historianLenght["SETPOINT"][0]
             
             if HistorianParams.PROCESS_VALUE in self.historianParams:
                 self.historian["PROCESS_VALUE"].append(processValue)
+                
+                if len(self.historian["PROCESS_VALUE"]) > self.historianLenght:
+                    del self.historianLenght["PROCESS_VALUE"][0]
 
             if HistorianParams.ERROR in self.historianParams:
                 self.historian["ERROR"].append(error)
+                
+                if len(self.historian["ERROR"]) > self.historianLenght:
+                    del self.historianLenght["ERROR"][0]
 
             if (HistorianParams.P in self.historianParams) or (HistorianParams.I in self.historianParams) or (HistorianParams.D in self.historianParams) or (HistorianParams.ERROR in self.historianParams) or (HistorianParams.OUTPUT in self.historianParams) or (HistorianParams.PROCESS_VALUE in self.historianParams) or (HistorianParams.SETPOINT in self.historianParams):
                 self.historian["TIME"].append(actualTime - self._startTime)
+                
+                if len(self.historian["TIME"]) > self.historianLenght:
+                    del self.historianLenght["TIME"][0]
             
             # ===== Saving data for next execution =====
             self._lastError = error
@@ -385,6 +419,9 @@ class ThreadedPID(PID, Thread):
             - HistorianParams.SETPOINT : PID setpoint
             - HistorianParams.PROCESS_VALUE : PID process value
             - HistorianParams.OUTPUT : PID output
+            
+    historianLenght: int, default = 100000
+        The maximum lenght of the historian. When the limit is reached, remove the oldest element.
     
     outputLimits: tuple[float, float], default = (None, None)
         Limit the output between a minimum and a maximum (min, max).
@@ -419,8 +456,8 @@ class ThreadedPID(PID, Thread):
     start()
         Used to start the thread.
     """
-    def __init__(self, kp: float, ki: float, kd: float, indirectAction: bool = False, integralLimit: float = None, historianParams: HistorianParams = None, outputLimits: tuple[float, float] = (None, None), logger: logging.Logger = None, cycleTime: float = 0.0) -> None:
-        PID.__init__(self, kp, ki, kd, indirectAction, integralLimit, historianParams, outputLimits, logger)
+    def __init__(self, kp: float, ki: float, kd: float, indirectAction: bool = False, integralLimit: float = None, historianParams: HistorianParams = None, historianLenght: int = 100000, outputLimits: tuple[float, float] = (None, None), logger: logging.Logger = None, cycleTime: float = 0.0) -> None:
+        PID.__init__(self, kp, ki, kd, indirectAction, integralLimit, historianParams, historianLenght, outputLimits, logger)
         Thread.__init__(self)
 
         self.setpoint = 0.0

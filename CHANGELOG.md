@@ -3,6 +3,7 @@
 ## [0.2.2] - 2023-01-27
 ### Added
 - Logging system added
+- Historian maximum lenght added
 
 ### Modififed
 
