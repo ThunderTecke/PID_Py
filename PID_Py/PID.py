@@ -1,6 +1,7 @@
 import time
 from enum import Flag, auto
 from threading import Thread
+import logging
 
 class HistorianParams(Flag):
     """
@@ -55,6 +56,10 @@ class PID:
         If a limit is set to None, the limit is deactivated.
         If `outputLimit` is set to None, there is no limits.
     
+    logger: logging.Logger or str, default = None
+        Logging system. `logging.Logger` instance or logger name (str) can be passed.
+        If it's anything else (None or other type), the PID will not send any log.
+    
     Attributes
     ----------
     kp: float
@@ -98,6 +103,9 @@ class PID:
         Bump can occur if the setpoint is too far from process value when automatic mode is reactivated.
         Default value : True
     
+    logger: logging.Logger
+        Contain the `logging.Logger` instance. If it's None or other type, the PID will not send any log.
+    
     Methods
     -------
     compute(processValue, setpoint)
@@ -106,7 +114,7 @@ class PID:
     __call__(processValue, setpoint)
         call `compute`. Is a code simplification.
     """
-    def __init__(self, kp: float, ki: float, kd: float, indirectAction: bool = False, integralLimit: float = None, historianParams: HistorianParams = None, outputLimits: tuple[float, float] = (None, None)) -> None:
+    def __init__(self, kp: float, ki: float, kd: float, indirectAction: bool = False, integralLimit: float = None, historianParams: HistorianParams = None, outputLimits: tuple[float, float] = (None, None), logger: logging.Logger = None) -> None:
         # PID parameters
         self.kp = kp
         self.ki = ki
@@ -162,6 +170,21 @@ class PID:
 
         # Output
         self.output = 0.0
+
+        # Logger
+        self.logger = None
+        if (isinstance(logger, logging.Logger)):
+            self.logger = logger
+            self.logger.info("PID object created")
+        elif (isinstance(logger, str)):
+            self.logger = logging.getLogger(logger)
+            self.logger.info("PID object created")
+
+        self.memManualMode = False
+        self.memIntegralLimit = False
+        self.outputLimitsReached = False
+        self.memoutputLimitsReached = False
+
     
     def compute(self, processValue: float, setpoint: float) -> float:
         """
@@ -180,6 +203,14 @@ class PID:
         float
             Return the PID output (same as `self.output`)
         """
+        # Logging mode switching
+        if (self.manualMode and not self.memManualMode):
+            self.logger.info("PID switched to manual mode")
+        elif (not self.manualMode and self.memManualMode):
+            self.logger.info("PID switched to automatic mode")
+        
+        self.memManualMode = self.manualMode
+        
         if self._startTime is not None and self._lastTime is not None:
             actualTime = time.time()
 
@@ -210,8 +241,25 @@ class PID:
                 if self.integralLimit is not None:
                     if self._i > self.integralLimit:
                         self._i = self.integralLimit
+
+                        # Integral limit warning
+                        if (not self.memIntegralLimit):
+                            self.logger.warning("Integral part has reached the limit (%d)", self.integralLimit)
+                            self.memIntegralLimit = True
+                        
                     elif self._i < -self.integralLimit:
                         self._i = -self.integralLimit
+
+                        # Integral limit warning
+                        if (not self.memIntegralLimit):
+                            self.logger.warning("Integral part has reached the limit (-%d)", self.integralLimit)
+                            self.memIntegralLimit = True
+                    
+                    # Reset integral limit warning memory
+                    else:
+                        self.memIntegralLimit = False
+                else:
+                    self.memIntegralLimit = False
                 
                 # ===== Derivative part =====
                 self._d = ((error - self._lastError) / deltaTime) * self.kd
@@ -225,14 +273,26 @@ class PID:
 
                 # ========== End of automatic mode ==========
 
+            self.outputLimitsReached = False
+
             # Output limitation
             if self.outputLimits is not None:
                 if self.outputLimits[0] is not None:
                     if _output < self.outputLimits[0]:
                         _output = self.outputLimits[0]
+
+                        self.outputLimitsReached = True
                 if self.outputLimits[1] is not None:
                     if _output > self.outputLimits[1]:
                         _output = self.outputLimits[1]
+                        
+                        self.outputLimitsReached = True
+            
+            # Output limit reached warning message
+            if (self.outputLimitsReached and not self.memoutputLimitsReached):
+                self.logger.warning("Output limits reached (%d, %d)", self.outputLimits[0], self.outputLimits[1])
+            
+            self.memoutputLimitsReached = self.outputLimitsReached
 
             # ===== Historian =====
             if HistorianParams.P in self.historianParams:
@@ -331,6 +391,10 @@ class ThreadedPID(PID, Thread):
         If a limit is set to None, the limit is deactivated.
         If `outputLimit` is set to None, there is no limits.
     
+    logger: logging.Logger or str, default = None
+        Logging system. `logging.Logger` instance or logger name (str) can be passed.
+        If it's anything else (None or other type), the PID will not send any log.
+    
     cycleTime: float, default = 0.0
         Define the minimum time between two PID calculations.
         If this time is lower than the real execution time, there is no pause between execution.
@@ -355,8 +419,8 @@ class ThreadedPID(PID, Thread):
     start()
         Used to start the thread.
     """
-    def __init__(self, kp: float, ki: float, kd: float, indirectAction: bool = False, integralLimit: float = None, historianParams: HistorianParams = None, outputLimits: tuple[float, float] = (None, None), cycleTime: float = 0.0) -> None:
-        PID.__init__(self, kp, ki, kd, indirectAction, integralLimit, historianParams, outputLimits)
+    def __init__(self, kp: float, ki: float, kd: float, indirectAction: bool = False, integralLimit: float = None, historianParams: HistorianParams = None, outputLimits: tuple[float, float] = (None, None), logger: logging.Logger = None, cycleTime: float = 0.0) -> None:
+        PID.__init__(self, kp, ki, kd, indirectAction, integralLimit, historianParams, outputLimits, logger)
         Thread.__init__(self)
 
         self.setpoint = 0.0

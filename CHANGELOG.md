@@ -1,5 +1,13 @@
 # Change log
 
+## [0.2.2] - 2023-01-27
+### Added
+- Logging system added
+
+### Modififed
+
+### Fixed
+
 ## [0.2.1] - 2023-01-26
 ### Added
 - Threaded PID class documentation
