@@ -62,7 +62,7 @@ pid = PID(kp = 0.0, ki = 0.0, kd = 0.0, outputLimits = (0, 100))
 command = pid(processValue = feedback, setpoint = targetValue)
 ```
 
-By default the value is `(None, None)`, wich implies that there is no limits. You can activate just the maximum limit with `(None, 100)`. The same for the minimum limit `(-100, None)`.
+By default the value is `(None, None)`, which implies that there is no limits. You can activate just the maximum limit with `(None, 100)`. The same for the minimum limit `(-100, None)`.
 
 ### Historian
 If you want to historize PID values, you can configure the historian to record values.

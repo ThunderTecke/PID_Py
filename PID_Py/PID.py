@@ -104,7 +104,7 @@ class PID:
         Execution PID calculation. Return `output`.
 
     __call__(processValue, setpoint)
-        call `compute`.
+        call `compute`. Is a code simplification.
     """
     def __init__(self, kp: float, ki: float, kd: float, indirectAction: bool = False, integralLimit: float = None, historianParams: HistorianParams = None, outputLimits: tuple[float, float] = (None, None)) -> None:
         # PID parameters
@@ -273,10 +273,88 @@ class PID:
             return 0.0
 
     def __call__(self, processValue: float, setpoint: float) -> float:
-        return self.compute(processValue, setpoint)
+        """
+        call `compute`. Is a code simplification.
         
+        Parameters
+        ----------
+        processValue: float
+            The actual system feedback
+        
+        setpoint: float
+            The target value for the PID
+        
+        Returns
+        -------
+        float
+            Return the PID output (same as `self.output`)
+        """
+        return self.compute(processValue, setpoint)
 
 class ThreadedPID(PID, Thread):
+    """
+    PID controller in a thread. Inherit from `PID` and `threading.Thread`.
+    For more information on `threading.Thread` follow this link https://docs.python.org/3/library/threading.html#thread-objects.
+
+    Parameters
+    ----------
+    kp: float
+        Proportionnal gain
+    
+    ki: float
+        Integral gain
+    
+    kd: float
+        Derivative gain
+    
+    indirectAction: bool, default = False
+        Invert PID action. Direct action (False) -> error = setpoint - processValue, Indirect action (True) -> error = processValue - setpoint.
+        This option implies that when error is increasing the output is decreasing.
+    
+    integralLimit: float, default = None
+        Limit the integral part. When this value is set to None, the integral part is not limited.
+        The integral part is clamped between -`integralLimit` and +`integralLimit`.
+    
+    historianParams: HistorianParams, default = None
+        Configure historian to record some value of the PID. When at least one value is recorded, time is recorded too.
+        Possible value :
+            - HistorianParams.P : Proportionnal part
+            - HistorianParams.I : Integral part
+            - HistorianParams.D : Derivative part
+            - HistorianParams.ERROR : PID error
+            - HistorianParams.SETPOINT : PID setpoint
+            - HistorianParams.PROCESS_VALUE : PID process value
+            - HistorianParams.OUTPUT : PID output
+    
+    outputLimits: tuple[float, float], default = (None, None)
+        Limit the output between a minimum and a maximum (min, max).
+        If a limit is set to None, the limit is deactivated.
+        If `outputLimit` is set to None, there is no limits.
+    
+    cycleTime: float, default = 0.0
+        Define the minimum time between two PID calculations.
+        If this time is lower than the real execution time, there is no pause between execution.
+        If `cycleTime` is higher than the real execution time, a pause is made to wait `cycleTime` since the start of the previous execution.
+
+    Attributes
+    ----------
+    setpoint: float
+        The current target value used for the PID calculation.
+    
+    processValue: float
+        The current system feedback used for the PID calculation. For a better PID, update it more faster than the PID execution.
+    
+    cycleTime: float
+        Same as `cycleTime` in parameters section.
+    
+    quit: bool
+        When the threaded PID is started, it can be stopped by setting `quit` to `True`. The PID finish the current execution and stop the thread.
+    
+    Methods
+    -------
+    start()
+        Used to start the thread.
+    """
     def __init__(self, kp: float, ki: float, kd: float, indirectAction: bool = False, integralLimit: float = None, historianParams: HistorianParams = None, outputLimits: tuple[float, float] = (None, None), cycleTime: float = 0.0) -> None:
         PID.__init__(self, kp, ki, kd, indirectAction, integralLimit, historianParams, outputLimits)
         Thread.__init__(self)
@@ -288,11 +366,20 @@ class ThreadedPID(PID, Thread):
         self.quit = False
     
     def start(self) -> None:
+        """
+        Used to start the threaded PID. Overrided from `threading.Thread`
+        See `threading.Thread` documentation for more information.
+        """
         # Call PID execution to initialize time memory
         self.compute(self.processValue, self.setpoint)
+        self.quit = False
         return Thread.start(self)
     
     def run(self):
+        """
+        Thread execution. Overrided from `threading.Thread`
+        See `threading.Thread` documentation for more information
+        """
         while self.quit is False:
             while time.time() < (self._lastTime + self.cycleTime):
                 time.sleep(self.cycleTime / 100.0)

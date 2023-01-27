@@ -1,5 +1,14 @@
 # Change log
 
+## [0.2.1] - 2023-01-26
+### Added
+- Threaded PID class documentation
+
+### Modififed
+
+### Fixed
+- Typo in CHANGELOD.md
+
 ## [0.2.0] - 2023-01-26
 ### Added
 - Threaded PID class implementation
