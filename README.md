@@ -103,6 +103,17 @@ In the example above, the PID historian records `setpoint`, `processValue` and `
 - `PROCESS_VALUE` : PID process value
 - `OUTPUT` : PID output
 
+The maximum lenght of the historian can be choose. By default it is set to 100 000 record per parameter. Take care about your memory.
+
+In example for one parameters. A `float` value take 24 bytes in memory. So `100 000` floats take `2 400 000` bytes (~2.3MB).
+
+For all parameters it takes `16 800 000` bytes (~16MB).
+It's not big for a computer, but if PID is executed each millisecond (0.001s), 100 000 record represent only 100 seconds of recording. 
+
+If you want to save 1 hour at 1 millisecond you will need 3 600 000 records (~82.4MB) for one parameter, and for all parameters it will takes ~576.8MB.
+
+For a raspberry pi 3 B+ it's the half of the RAM capacity (1GB)
+
 ### Integral limitation
 The integral part of the PID can be limit to avoid overshoot of the output when the error is too high (When the setpoint variation is too high, or when the system have trouble to reach setpoint).
 
@@ -146,6 +157,29 @@ In the example above, command will be always equal to 12.7. The PID calculation 
 To avoid bump when switching in manual there is `bumplessSwitching` attribute. This attributes keep `manualValue` equal to `output`. 
 
 If you disable this function you will have bump when you switch in manual mode with `manualValue` different of `output`. If this case you can **destabilise** (:heavy_exclamation_mark:) your system. Be careful
+
+### Logging
+The PID can use a logger (logging.Logger built-in class) to log event. Logging configuration can be set outside of the PID.
+See [logging.Logger](https://docs.python.org/3/library/logging.html#logger-objects) documentation.
+
+```Python
+from PID_Py.PID import PID
+import logging
+
+# Initialization
+pid = PID(kp = 0.0, ki = 0.0, kd = 0.0, logger = logging.getLogger("PID"))
+
+...
+
+# PID execution (call it as fast as you can)
+command = pid(processValue = feedback, setpoint = targetValue)
+```
+
+In the example above, the PID will send event on the logger. The logger can also get with the name.
+
+```Python
+pid = PID(kp = 0.0, ki = 0.0, kd = 0.0, logger = "PID")
+```
 
 ### Threaded PID
 With the threaded PID you don't have to call `pid(processValue, setpoint)`. It's call as fast as possible or with a constant cycle time. When you want to stop the PID use `quit` attribute to finish the current execution and exit. 
