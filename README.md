@@ -114,6 +114,27 @@ If you want to save 1 hour at 1 millisecond you will need 3 600 000 records (~82
 
 For a raspberry pi 3 B+ it's the half of the RAM capacity (1GB)
 
+### Proportionnal on measurement
+This avoid a strong response of proportionnal part when the setpoint is suddenly changed. 
+
+This change the P equation as follow :
+- False : P = error * kp
+- True : P = -(processValue * kp)
+
+This result in an augmentation of the stabilization time of the system, but there is no bump on the output when the setpoint change suddenly. There is no difference on the reponds to process disturbance.
+
+```Python
+from PID_Py.PID import PID
+
+# Initialization
+pid = PID(kp = 0.0, ki = 0.0, kd = 0.0, proportionnalOnMeasurement=True)
+
+...
+
+# PID execution (call it as fast as you can)
+command = pid(processValue = feedback, setpoint = targetValue)
+```
+
 ### Integral limitation
 The integral part of the PID can be limit to avoid overshoot of the output when the error is too high (When the setpoint variation is too high, or when the system have trouble to reach setpoint).
 
@@ -130,6 +151,27 @@ command = pid(processValue = feedback, setpoint = targetValue)
 ```
 
 In the example above, the integral part of the PID is clamped between -20 and 20.
+
+### Derivative on measurement
+This avoid a strong response of derivate part when the setpoint is suddenly changed. 
+
+This change the D equation as follow :
+- False : D = ((error - lastError) / dt) * kd
+- True : D = -(((processValue - lastProcessValue) / dt) * kd)
+
+The effect is there is no bump when the setpoint change suddenly, and there is no difference on the responds to process disturbance.
+
+```Python
+from PID_Py.PID import PID
+
+# Initialization
+pid = PID(kp = 0.0, ki = 0.0, kd = 0.0, derivativeOnMeasurement=True)
+
+...
+
+# PID execution (call it as fast as you can)
+command = pid(processValue = feedback, setpoint = targetValue)
+```
 
 ### Manual mode
 The PID can be switch in manual mode, this allow to operate output directly through `manualValue`.
