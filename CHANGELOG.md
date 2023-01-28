@@ -1,5 +1,14 @@
 # Change log
 
+## [0.2.3] - 2023-01-28
+### Added
+- Proportionnal on measurement added
+- Derivative on measurement added
+
+### Modififed
+
+### Fixed
+
 ## [0.2.2] - 2023-01-27
 ### Added
 - Logging system added

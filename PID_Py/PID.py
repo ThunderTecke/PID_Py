@@ -36,9 +36,22 @@ class PID:
         Invert PID action. Direct action (False) -> error = setpoint - processValue, Indirect action (True) -> error = processValue - setpoint.
         This option implies that when error is increasing the output is decreasing.
     
+    proportionnalOnMeasurement: bool
+        Activate proportionnal part calculation on processValue, instead of error.
+        This avoid output bump when the setpoint change strongly, but increase stabilization time.
+        False -> P = kp * error
+        True  -> P = -kp * processValue
+
     integralLimit: float, default = None
         Limit the integral part. When this value is set to None, the integral part is not limited.
         The integral part is clamped between -`integralLimit` and +`integralLimit`.
+    
+    derivativeOnMeasurement: bool
+        Activate derivative part calculation on processValue, instead of error.
+        This avoid output bump when the setpoint change strongly, and there is no repercution on the PID behavior.
+        If the processValue change strongly, the derivative part will slow down the processValue.s6
+        False -> D = kd * ((error - lastError) / dt)
+        True  -> D = -kd * ((processValue - lastProcessValue) / dt)
     
     historianParams: HistorianParams, default = None
         Configure historian to record some value of the PID. When at least one value is recorded, time is recorded too.
@@ -77,8 +90,14 @@ class PID:
     indirectAction: float
         Same as `indirectAction` in parameters section
     
+    proportionnalOnMeasurement: bool
+        Same as `proportionnalOnMeasurement` in parameters section
+
     integralLimit: float
         Same as `integralLimit` in parameters section
+    
+    derivativeOnMeasurement: bool
+        Same as `derivativeOnMeasurement` in parameters section
     
     outputLimits: float
         Same as `outputLimits` in parameters section
@@ -120,7 +139,7 @@ class PID:
     __call__(processValue, setpoint)
         call `compute`. Is a code simplification.
     """
-    def __init__(self, kp: float, ki: float, kd: float, indirectAction: bool = False, integralLimit: float = None, historianParams: HistorianParams = None, historianLenght: int = 100000, outputLimits: tuple[float, float] = (None, None), logger: logging.Logger = None) -> None:
+    def __init__(self, kp: float, ki: float, kd: float, indirectAction: bool = False, proportionnalOnMeasurement: bool = False, integralLimit: float = None, derivativeOnMeasurment: bool = False, historianParams: HistorianParams = None, historianLenght: int = 100000, outputLimits: tuple[float, float] = (None, None), logger: logging.Logger = None) -> None:
         # PID parameters
         self.kp = kp
         self.ki = ki
@@ -128,7 +147,9 @@ class PID:
 
         self.indirectAction = indirectAction
 
+        self.proportionnalOnMeasurement = proportionnalOnMeasurement
         self.integralLimit = integralLimit
+        self.derivativeOnMeasurement = derivativeOnMeasurment
 
         self.outputLimits = outputLimits
 
@@ -173,6 +194,7 @@ class PID:
         # Internal attributes
         self._lastTime = None
         self._lastError = 0.0
+        self._lastProcessValue = 0.0
         self._startTime = None
 
         self._p = 0.0
@@ -192,7 +214,8 @@ class PID:
             self.logger.info("PID object created")
 
         self.memManualMode = False
-        self.memIntegralLimit = False
+        self.integralLimitReached = False
+        self.memIntegralLimitReached = False
         self.outputLimitsReached = False
         self.memoutputLimitsReached = False
 
@@ -242,37 +265,39 @@ class PID:
                 deltaTime = actualTime - self._lastTime
                 
                 # ===== Proportionnal part =====
-                self._p = error * self.kp
+                if (not self.proportionnalOnMeasurement):
+                    self._p = error * self.kp
+                else:
+                    self._p = -processValue * self.kp
 
                 # ===== Integral part =====
                 self._i += ((error + self._lastError) / 2.0) * deltaTime * self.ki
 
                 # Integral part limitation
+                self.integralLimitReached = False
+
                 if self.integralLimit is not None:
                     if self._i > self.integralLimit:
                         self._i = self.integralLimit
 
-                        # Integral limit warning
-                        if (not self.memIntegralLimit):
-                            self.logger.warning("Integral part has reached the limit (%d)", self.integralLimit)
-                            self.memIntegralLimit = True
+                        self.integralLimitReached = True
                         
                     elif self._i < -self.integralLimit:
                         self._i = -self.integralLimit
 
-                        # Integral limit warning
-                        if (not self.memIntegralLimit):
-                            self.logger.warning("Integral part has reached the limit (-%d)", self.integralLimit)
-                            self.memIntegralLimit = True
-                    
-                    # Reset integral limit warning memory
-                    else:
-                        self.memIntegralLimit = False
-                else:
-                    self.memIntegralLimit = False
+                        self.integralLimitReached = True
+                
+                # Integral limit reached warning message
+                if (self.integralLimitReached and not self.memIntegralLimitReached):
+                    self.logger.warning("Integral part has reached the limit (%d, %d)", -self.integralLimit, self.integralLimit)
+                
+                self.memIntegralLimitReached = self.integralLimitReached
                 
                 # ===== Derivative part =====
-                self._d = ((error - self._lastError) / deltaTime) * self.kd
+                if (not self.derivativeOnMeasurement):
+                    self._d = ((error - self._lastError) / deltaTime) * self.kd
+                else:
+                    self._d = -((processValue - self._lastProcessValue) / deltaTime) * self.kd
                 
                 # ===== Output =====
                 _output = self._p + self._i + self._d
@@ -356,6 +381,7 @@ class PID:
             # ===== Saving data for next execution =====
             self._lastError = error
             self._lastTime = actualTime
+            self._lastProcessValue = processValue
 
             self.output = _output
             return self.output
@@ -405,9 +431,22 @@ class ThreadedPID(PID, Thread):
         Invert PID action. Direct action (False) -> error = setpoint - processValue, Indirect action (True) -> error = processValue - setpoint.
         This option implies that when error is increasing the output is decreasing.
     
+    proportionnalOnMeasurement: bool
+        Activate proportionnal part calculation on processValue, instead of error.
+        This avoid output bump when the setpoint change strongly, but increase stabilization time.
+        False -> P = kp * error
+        True  -> P = -kp * processValue
+
     integralLimit: float, default = None
         Limit the integral part. When this value is set to None, the integral part is not limited.
         The integral part is clamped between -`integralLimit` and +`integralLimit`.
+    
+    derivativeOnMeasurement: bool
+        Activate derivative part calculation on processValue, instead of error.
+        This avoid output bump when the setpoint change strongly, and there is no repercution on the PID behavior.
+        If the processValue change strongly, the derivative part will slow down the processValue.s6
+        False -> D = kd * ((error - lastError) / dt)
+        True  -> D = -kd * ((processValue - lastProcessValue) / dt)
     
     historianParams: HistorianParams, default = None
         Configure historian to record some value of the PID. When at least one value is recorded, time is recorded too.
@@ -456,8 +495,8 @@ class ThreadedPID(PID, Thread):
     start()
         Used to start the thread.
     """
-    def __init__(self, kp: float, ki: float, kd: float, indirectAction: bool = False, integralLimit: float = None, historianParams: HistorianParams = None, historianLenght: int = 100000, outputLimits: tuple[float, float] = (None, None), logger: logging.Logger = None, cycleTime: float = 0.0) -> None:
-        PID.__init__(self, kp, ki, kd, indirectAction, integralLimit, historianParams, historianLenght, outputLimits, logger)
+    def __init__(self, kp: float, ki: float, kd: float, indirectAction: bool = False, proportionnalOnMeasurement: bool = False, integralLimit: float = None, derivativeOnMeasurment: bool = False, historianParams: HistorianParams = None, historianLenght: int = 100000, outputLimits: tuple[float, float] = (None, None), logger: logging.Logger = None, cycleTime: float = 0.0) -> None:
+        PID.__init__(self, kp, ki, kd, indirectAction, proportionnalOnMeasurement, integralLimit, derivativeOnMeasurment, historianParams, historianLenght, outputLimits, logger)
         Thread.__init__(self)
 
         self.setpoint = 0.0
