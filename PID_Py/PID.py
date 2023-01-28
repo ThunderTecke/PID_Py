@@ -237,9 +237,9 @@ class PID:
             Return the PID output (same as `self.output`)
         """
         # Logging mode switching
-        if (self.manualMode and not self.memManualMode):
+        if (self.manualMode and not self.memManualMode and isinstance(self.logger, logging.Logger)):
             self.logger.info("PID switched to manual mode")
-        elif (not self.manualMode and self.memManualMode):
+        elif (not self.manualMode and self.memManualMode and isinstance(self.logger, logging.Logger)):
             self.logger.info("PID switched to automatic mode")
         
         self.memManualMode = self.manualMode
@@ -288,7 +288,7 @@ class PID:
                         self.integralLimitReached = True
                 
                 # Integral limit reached warning message
-                if (self.integralLimitReached and not self.memIntegralLimitReached):
+                if (self.integralLimitReached and not self.memIntegralLimitReached and isinstance(self.logger, logging.Logger)):
                     self.logger.warning("Integral part has reached the limit (%d, %d)", -self.integralLimit, self.integralLimit)
                 
                 self.memIntegralLimitReached = self.integralLimitReached
@@ -324,7 +324,7 @@ class PID:
                         self.outputLimitsReached = True
             
             # Output limit reached warning message
-            if (self.outputLimitsReached and not self.memoutputLimitsReached):
+            if (self.outputLimitsReached and not self.memoutputLimitsReached and isinstance(self.logger, logging.Logger)):
                 self.logger.warning("Output limits reached (%d, %d)", self.outputLimits[0], self.outputLimits[1])
             
             self.memoutputLimitsReached = self.outputLimitsReached
