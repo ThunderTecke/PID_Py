@@ -1,5 +1,13 @@
 # Change log
 
+## [0.2.4] - 2023-01-28
+### Added
+- Keep integral part equal to output in manual mode
+
+### Modififed
+
+### Fixed
+
 ## [0.2.3] - 2023-01-28
 ### Added
 - Proportionnal on measurement added

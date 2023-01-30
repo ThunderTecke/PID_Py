@@ -247,73 +247,64 @@ class PID:
         if self._startTime is not None and self._lastTime is not None:
             actualTime = time.time()
 
-            if (self.manualMode):
-                # ========== Manual mode ==========
-                _output = self.manualValue
-                self._p = 0.0
-                self._i = _output
-                self._d = 0.0
-                error = 0.0
+            # ===== Error calculation =====
+            if self.indirectAction:
+                error = processValue - setpoint
+            else:
+                error = setpoint - processValue
+            
+            # ===== Delta time =====
+            deltaTime = actualTime - self._lastTime
+            
+            # ===== Proportionnal part =====
+            if (not self.proportionnalOnMeasurement):
+                self._p = error * self.kp
+            else:
+                self._p = -processValue * self.kp
 
-                # ========== End of manual mode ==========
-            else: 
-                # ========== Automatic mode ==========
-                # ===== Error calculation =====
-                if self.indirectAction:
-                    error = processValue - setpoint
-                else:
-                    error = setpoint - processValue
-                
-                # ===== Delta time =====
-                deltaTime = actualTime - self._lastTime
-                
-                # ===== Proportionnal part =====
-                if (not self.proportionnalOnMeasurement):
-                    self._p = error * self.kp
-                else:
-                    self._p = -processValue * self.kp
-
-                # ===== Integral part =====
+            # ===== Integral part =====
+            if (not self.manualMode):
                 self._i += ((error + self._lastError) / 2.0) * deltaTime * self.ki
 
-                # Integral part limitation
-                self.integralLimitReached = False
+            # Integral part limitation
+            self.integralLimitReached = False
 
-                if self.integralLimit is not None:
-                    if self._i > self.integralLimit:
-                        self._i = self.integralLimit
+            if self.integralLimit is not None:
+                if self._i > self.integralLimit:
+                    self._i = self.integralLimit
 
-                        self.integralLimitReached = True
-                        
-                    elif self._i < -self.integralLimit:
-                        self._i = -self.integralLimit
+                    self.integralLimitReached = True
+                    
+                elif self._i < -self.integralLimit:
+                    self._i = -self.integralLimit
 
-                        self.integralLimitReached = True
-                
-                # Integral limit reached warning message
-                if (self.integralLimitReached and not self.memIntegralLimitReached and isinstance(self.logger, logging.Logger)):
-                    self.logger.warning("Integral part has reached the limit (%d, %d)", -self.integralLimit, self.integralLimit)
-                
-                self.memIntegralLimitReached = self.integralLimitReached
-                
-                # ===== Derivative part =====
-                if (not self.derivativeOnMeasurement):
-                    self._d = ((error - self._lastError) / deltaTime) * self.kd
-                else:
-                    self._d = -((processValue - self._lastProcessValue) / deltaTime) * self.kd
-                
-                # ===== Output =====
+                    self.integralLimitReached = True
+            
+            # Integral limit reached warning message
+            if (self.integralLimitReached and not self.memIntegralLimitReached and isinstance(self.logger, logging.Logger)):
+                self.logger.warning("Integral part has reached the limit (%d, %d)", -self.integralLimit, self.integralLimit)
+            
+            self.memIntegralLimitReached = self.integralLimitReached
+            
+            # ===== Derivative part =====
+            if (not self.derivativeOnMeasurement):
+                self._d = ((error - self._lastError) / deltaTime) * self.kd
+            else:
+                self._d = -((processValue - self._lastProcessValue) / deltaTime) * self.kd
+            
+            # ===== Output =====
+            if (not self.manualMode):
                 _output = self._p + self._i + self._d
 
-                # ===== Bumpless manual value =====
+                # Bumpless manual value
                 if (self.bumplessSwitching):
                     self.manualValue = _output
-
-                # ========== End of automatic mode ==========
-
-            self.outputLimitsReached = False
+            else:
+                _output = self.manualValue
 
             # Output limitation
+            self.outputLimitsReached = False
+
             if self.outputLimits is not None:
                 if self.outputLimits[0] is not None:
                     if _output < self.outputLimits[0]:
@@ -331,6 +322,10 @@ class PID:
                 self.logger.warning("Output limits reached (%d, %d)", self.outputLimits[0], self.outputLimits[1])
             
             self.memoutputLimitsReached = self.outputLimitsReached
+
+            # Interal part equal to output in manual mode
+            if (self.manualMode):
+                self._i = _output - self._p
 
             # ===== Historian =====
             if HistorianParams.P in self.historianParams:
