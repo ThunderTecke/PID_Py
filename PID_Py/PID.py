@@ -250,6 +250,9 @@ class PID:
             if (self.manualMode):
                 # ========== Manual mode ==========
                 _output = self.manualValue
+                self._p = 0.0
+                self._i = _output
+                self._d = 0.0
                 error = 0.0
 
                 # ========== End of manual mode ==========
