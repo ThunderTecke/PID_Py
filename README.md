@@ -194,7 +194,7 @@ pid.manualValue = 12.7
 command = pid(processValue = feedback, setpoint = targetValue)
 ```
 
-In the example above, command will be always equal to 12.7. The PID calculation is no longer executed. The proportionnal, integral and derivative parts still at the same value to avoid bump when switching back to automatic.
+In the example above, command will be always equal to 12.7. The PID calculation is no longer executed. The integral part is keep equal to output minus proportionnal part, this allow a smooth switching to automatic.
 
 To avoid bump when switching in manual there is `bumplessSwitching` attribute. This attributes keep `manualValue` equal to `output`. 
 
