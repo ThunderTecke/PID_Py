@@ -139,7 +139,7 @@ class PID:
     __call__(processValue, setpoint)
         call `compute`. Is a code simplification.
     """
-    def __init__(self, kp: float, ki: float, kd: float, indirectAction: bool = False, proportionnalOnMeasurement: bool = False, integralLimit: float = None, derivativeOnMeasurment: bool = False, historianParams: HistorianParams = None, historianLenght: int = 100000, outputLimits: tuple[float, float] = (None, None), logger: logging.Logger = None) -> None:
+    def __init__(self, kp: float, ki: float, kd: float, indirectAction: bool = False, proportionnalOnMeasurement: bool = False, integralLimit: float = None, derivativeOnMeasurment: bool = False, setpointRamp: float = None, historianParams: HistorianParams = None, historianLenght: int = 100000, outputLimits: tuple[float, float] = (None, None), logger: logging.Logger = None) -> None:
         # PID parameters
         self.kp = kp
         self.ki = ki
@@ -150,6 +150,8 @@ class PID:
         self.proportionnalOnMeasurement = proportionnalOnMeasurement
         self.integralLimit = integralLimit
         self.derivativeOnMeasurement = derivativeOnMeasurment
+
+        self.setpointRamp = setpointRamp
 
         self.outputLimits = outputLimits
 
@@ -201,6 +203,8 @@ class PID:
         self._i = 0.0
         self._d = 0.0
 
+        self._setpoint = 0.0
+
         # Output
         self.output = 0.0
 
@@ -247,14 +251,26 @@ class PID:
         if self._startTime is not None and self._lastTime is not None:
             actualTime = time.time()
 
-            # ===== Error calculation =====
-            if self.indirectAction:
-                error = processValue - setpoint
-            else:
-                error = setpoint - processValue
-            
             # ===== Delta time =====
             deltaTime = actualTime - self._lastTime
+
+            # ===== Setpoint ramp =====
+            setpointDiff = setpoint - self._setpoint
+
+            if (self.setpointRamp is not None):
+                if (self.setpointRamp > 0.0):
+                    if (setpointDiff > self.setpointRamp * deltaTime):
+                        setpointDiff = self.setpointRamp * deltaTime
+                    elif (setpointDiff < -self.setpointRamp * deltaTime):
+                        setpointDiff = -self.setpointRamp * deltaTime
+                
+            self._setpoint += setpointDiff
+
+            # ===== Error calculation =====
+            if self.indirectAction:
+                error = processValue - self._setpoint
+            else:
+                error = self._setpoint - processValue
             
             # ===== Proportionnal part =====
             if (not self.proportionnalOnMeasurement):
@@ -353,7 +369,7 @@ class PID:
                     del self.historianLenght["OUTPUT"][0]
             
             if HistorianParams.SETPOINT in self.historianParams:
-                self.historian["SETPOINT"].append(setpoint)
+                self.historian["SETPOINT"].append(self._setpoint)
                 
                 if len(self.historian["SETPOINT"]) > self.historianLenght:
                     del self.historianLenght["SETPOINT"][0]
@@ -493,8 +509,8 @@ class ThreadedPID(PID, Thread):
     start()
         Used to start the thread.
     """
-    def __init__(self, kp: float, ki: float, kd: float, indirectAction: bool = False, proportionnalOnMeasurement: bool = False, integralLimit: float = None, derivativeOnMeasurment: bool = False, historianParams: HistorianParams = None, historianLenght: int = 100000, outputLimits: tuple[float, float] = (None, None), logger: logging.Logger = None, cycleTime: float = 0.0) -> None:
-        PID.__init__(self, kp, ki, kd, indirectAction, proportionnalOnMeasurement, integralLimit, derivativeOnMeasurment, historianParams, historianLenght, outputLimits, logger)
+    def __init__(self, kp: float, ki: float, kd: float, indirectAction: bool = False, proportionnalOnMeasurement: bool = False, integralLimit: float = None, derivativeOnMeasurment: bool = False, setpointRamp: float = None, historianParams: HistorianParams = None, historianLenght: int = 100000, outputLimits: tuple[float, float] = (None, None), logger: logging.Logger = None, cycleTime: float = 0.0) -> None:
+        PID.__init__(self, kp, ki, kd, indirectAction, proportionnalOnMeasurement, integralLimit, derivativeOnMeasurment, setpointRamp, historianParams, historianLenght, outputLimits, logger)
         Thread.__init__(self)
 
         self.setpoint = 0.0
