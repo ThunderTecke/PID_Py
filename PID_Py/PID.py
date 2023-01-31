@@ -37,7 +37,7 @@ class PID:
         Invert PID action. Direct action (False) -> error = setpoint - processValue, Indirect action (True) -> error = processValue - setpoint.
         This option implies that when error is increasing the output is decreasing.
     
-    proportionnalOnMeasurement: bool
+    proportionnalOnMeasurement: bool, default = False
         Activate proportionnal part calculation on processValue, instead of error.
         This avoid output bump when the setpoint change strongly, but increase stabilization time.
         False -> P = kp * error
@@ -47,12 +47,23 @@ class PID:
         Limit the integral part. When this value is set to None, the integral part is not limited.
         The integral part is clamped between -`integralLimit` and +`integralLimit`.
     
-    derivativeOnMeasurement: bool
+    derivativeOnMeasurement: bool, default = False
         Activate derivative part calculation on processValue, instead of error.
         This avoid output bump when the setpoint change strongly, and there is no repercution on the PID behavior.
         If the processValue change strongly, the derivative part will slow down the processValue.s6
         False -> D = kd * ((error - lastError) / dt)
         True  -> D = -kd * ((processValue - lastProcessValue) / dt)
+    
+    setpointRamp: float, default = None
+        Determine the maximum variation of the setpoint per second.
+        If None, no ramps are applied.
+    
+    processValueStableLimit: float, default = None
+        Determine the maximum variation to be considered stabilized.
+        If None, the process value will not be considered stabilized.
+    
+    processValueStableTime: float, default = 1.0
+        Determine the amount of time which the process value must be stabilized to activate `processValueStabilized` output.
     
     historianParams: HistorianParams, default = None
         Configure historian to record some value of the PID. When at least one value is recorded, time is recorded too.
@@ -99,7 +110,13 @@ class PID:
     
     derivativeOnMeasurement: bool
         Same as `derivativeOnMeasurement` in parameters section
+
+    processValueStableLimit: float
+        Same as `processValueStableLimit` in parameters section
     
+    self.processValueStableTime: float
+        Same as `processValueStableTime` in parameters section
+
     outputLimits: float
         Same as `outputLimits` in parameters section
 
@@ -262,12 +279,16 @@ class PID:
             deltaTime = actualTime - self._lastTime
 
             # Process value stabilization
-            if (abs((processValue - self._lastProcessValue) / deltaTime) < self.processValueStableLimit):
-                self._processValueCurrStableTime += deltaTime
-            else:
-                self._processValueCurrStableTime = 0.0
+            if (self.processValueStableLimit is not None):
+                if (abs((processValue - self._lastProcessValue) / deltaTime) < self.processValueStableLimit):
+                    self._processValueCurrStableTime += deltaTime
+                else:
+                    self._processValueCurrStableTime = 0.0
 
-            self.processValueStabilized = self._processValueCurrStableTime > self.processValueStableTime
+                self.processValueStabilized = self._processValueCurrStableTime > self.processValueStableTime
+            else:
+                self.processValueStabilized = False
+                self._processValueCurrStableTime = 0.0
 
             # ===== Setpoint ramp =====
             setpointDiff = setpoint - self._setpoint
@@ -476,6 +497,17 @@ class ThreadedPID(PID, Thread):
         If the processValue change strongly, the derivative part will slow down the processValue.s6
         False -> D = kd * ((error - lastError) / dt)
         True  -> D = -kd * ((processValue - lastProcessValue) / dt)
+
+    setpointRamp: float, default = None
+        Determine the maximum variation of the setpoint per second.
+        If None, no ramps are applied.
+    
+    processValueStableLimit: float, default = None
+        Determine the maximum variation to be considered stabilized.
+        If None, the process value will not be considered stabilized.
+    
+    processValueStableTime: float, default = 1.0
+        Determine the amount of time which the process value must be stabilized to activate `processValueStabilized` output.
     
     historianParams: HistorianParams, default = None
         Configure historian to record some value of the PID. When at least one value is recorded, time is recorded too.
@@ -524,8 +556,8 @@ class ThreadedPID(PID, Thread):
     start()
         Used to start the thread.
     """
-    def __init__(self, kp: float, ki: float, kd: float, indirectAction: bool = False, proportionnalOnMeasurement: bool = False, integralLimit: float = None, derivativeOnMeasurment: bool = False, setpointRamp: float = None, historianParams: HistorianParams = None, historianLenght: int = 100000, outputLimits: tuple[float, float] = (None, None), logger: logging.Logger = None, cycleTime: float = 0.0) -> None:
-        PID.__init__(self, kp, ki, kd, indirectAction, proportionnalOnMeasurement, integralLimit, derivativeOnMeasurment, setpointRamp, historianParams, historianLenght, outputLimits, logger)
+    def __init__(self, kp: float, ki: float, kd: float, indirectAction: bool = False, proportionnalOnMeasurement: bool = False, integralLimit: float = None, derivativeOnMeasurment: bool = False, setpointRamp: float = None, processValueStableLimit: float = None, processValueStableTime: float = 1.0, historianParams: HistorianParams = None, historianLenght: int = 100000, outputLimits: tuple[float, float] = (None, None), logger: logging.Logger = None, cycleTime: float = 0.0) -> None:
+        PID.__init__(self, kp, ki, kd, indirectAction, proportionnalOnMeasurement, integralLimit, derivativeOnMeasurment, setpointRamp, processValueStableLimit, processValueStableTime, historianParams, historianLenght, outputLimits, logger)
         Thread.__init__(self)
 
         self.setpoint = 0.0
