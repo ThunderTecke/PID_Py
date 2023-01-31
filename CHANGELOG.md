@@ -1,5 +1,13 @@
 # Change log
 
+## [0.2.5] - 2023-01-28
+### Added
+- Setpoint ramp option added
+
+### Modififed
+
+### Fixed
+
 ## [0.2.4] - 2023-01-28
 ### Added
 - Keep integral part equal to output in manual mode

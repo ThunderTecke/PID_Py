@@ -173,6 +173,26 @@ pid = PID(kp = 0.0, ki = 0.0, kd = 0.0, derivativeOnMeasurement=True)
 command = pid(processValue = feedback, setpoint = targetValue)
 ```
 
+### Setpoint ramp
+The setpoint variation can be limited with `setpointRamp` option.
+This option allow to make a ramp with the setpoint when this one change.
+
+```Python
+from PID_Py.PID import PID
+
+# Initialization
+pid = PID(kp = 0.0, ki = 0.0, kd = 0.0, setpointRamp=10.0)
+
+...
+
+# PID execution (call it as fast as you can)
+command = pid(processValue = feedback, setpoint = targetValue)
+```
+
+In the example above, the setpoint has a maximal ramp of 10 units per second.
+If the setpoint is change to 10 from 0, the real setpoint used will change for 1 second to 10.0.
+The same behavior in negative, but with `-setpointRamp`.
+
 ### Manual mode
 The PID can be switch in manual mode, this allow to operate output directly through `manualValue`.
 
