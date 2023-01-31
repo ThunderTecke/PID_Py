@@ -5,7 +5,7 @@ from PID_Py.PID import HistorianParams as HistParams
 import time
 import matplotlib.pyplot as plt
 
-pid = PID.PID(kp = 1.0, ki = 1.0, kd = 0.0, proportionnalOnMeasurement=False, derivativeOnMeasurment=True, historianParams=(HistParams.ERROR | HistParams.OUTPUT | HistParams.PROCESS_VALUE | HistParams.SETPOINT | HistParams.P | HistParams.I | HistParams.D))
+pid = PID.PID(kp = 1.0, ki = 11.0, kd = 0.0, proportionnalOnMeasurement=True, derivativeOnMeasurment=True, historianParams=(HistParams.ERROR | HistParams.OUTPUT | HistParams.PROCESS_VALUE | HistParams.SETPOINT | HistParams.P | HistParams.I | HistParams.D))
 system = Sim.Simulation(1.0, 0.1)
 
 startTime = time.time()
@@ -19,15 +19,6 @@ print(f"This will be take {timeLenght} secondes")
 while time.time() - startTime < timeLenght:
     if time.time() - startTime >= 1.0:
         setpoint = 10.0
-    
-    if time.time() - startTime >= 5.0:
-        pid.manualMode = True
-    
-    if time.time() - startTime >= 6.0:
-        pid.manualValue = 3.0
-    
-    if time.time() - startTime >= 8.0:
-        pid.manualMode = False
     
     system(pid(system.output, setpoint))
 
