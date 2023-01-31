@@ -6,7 +6,7 @@
 ![Python version](https://img.shields.io/badge/Python-v3.10-blue)
 
 # PID_Py
-`PID_Py` provide a PID controller wrote in Python. This PID controller is simple to use, but it's complete.
+`PID_Py` provide a PID controller written in Python. This PID controller is simple to use, but it's complete.
 
 ## :bangbang: Non-responsability :bangbang:
 ***<span style="color:red">I am not responsible for any material or personal damages in case of failure. Use at your own risk.</span>***

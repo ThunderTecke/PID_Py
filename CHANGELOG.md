@@ -7,6 +7,7 @@
 ### Modififed
 
 ### Fixed
+- Typo in README.md
 
 ## [0.2.5] - 2023-01-28
 ### Added
