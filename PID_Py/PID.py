@@ -2,6 +2,7 @@ import time
 from enum import Flag, auto
 from threading import Thread
 import logging
+import math
 
 class HistorianParams(Flag):
     """
@@ -139,7 +140,7 @@ class PID:
     __call__(processValue, setpoint)
         call `compute`. Is a code simplification.
     """
-    def __init__(self, kp: float, ki: float, kd: float, indirectAction: bool = False, proportionnalOnMeasurement: bool = False, integralLimit: float = None, derivativeOnMeasurment: bool = False, setpointRamp: float = None, historianParams: HistorianParams = None, historianLenght: int = 100000, outputLimits: tuple[float, float] = (None, None), logger: logging.Logger = None) -> None:
+    def __init__(self, kp: float, ki: float, kd: float, indirectAction: bool = False, proportionnalOnMeasurement: bool = False, integralLimit: float = None, derivativeOnMeasurment: bool = False, setpointRamp: float = None, processValueStableLimit: float = None, processValueStableTime: float = 1.0, historianParams: HistorianParams = None, historianLenght: int = 100000, outputLimits: tuple[float, float] = (None, None), logger: logging.Logger = None) -> None:
         # PID parameters
         self.kp = kp
         self.ki = ki
@@ -152,6 +153,9 @@ class PID:
         self.derivativeOnMeasurement = derivativeOnMeasurment
 
         self.setpointRamp = setpointRamp
+
+        self.processValueStableLimit = processValueStableLimit
+        self.processValueStableTime = processValueStableTime
 
         self.outputLimits = outputLimits
 
@@ -199,14 +203,17 @@ class PID:
         self._lastProcessValue = 0.0
         self._startTime = None
 
+        self._processValueCurrStableTime = 0.0
+
         self._p = 0.0
         self._i = 0.0
         self._d = 0.0
 
         self._setpoint = 0.0
 
-        # Output
+        # Outputs
         self.output = 0.0
+        self.processValueStabilized = False
 
         # Logger
         self.logger = None
@@ -248,11 +255,19 @@ class PID:
         
         self.memManualMode = self.manualMode
         
+        # PID calculation
         if self._startTime is not None and self._lastTime is not None:
-            actualTime = time.time()
-
             # ===== Delta time =====
+            actualTime = time.time()
             deltaTime = actualTime - self._lastTime
+
+            # Process value stabilization
+            if (abs((processValue - self._lastProcessValue) / deltaTime) < self.processValueStableLimit):
+                self._processValueCurrStableTime += deltaTime
+            else:
+                self._processValueCurrStableTime = 0.0
+
+            self.processValueStabilized = self._processValueCurrStableTime > self.processValueStableTime
 
             # ===== Setpoint ramp =====
             setpointDiff = setpoint - self._setpoint
