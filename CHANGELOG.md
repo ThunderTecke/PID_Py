@@ -1,5 +1,14 @@
 # Change log
 
+## [0.2.6] - 2023-01-28
+### Added
+- Process value stabilized indication added
+
+### Modififed
+
+### Fixed
+- Typo in README.md
+
 ## [0.2.5] - 2023-01-28
 ### Added
 - Setpoint ramp option added

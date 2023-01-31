@@ -5,7 +5,7 @@ from PID_Py.PID import HistorianParams as HistParams
 import time
 import matplotlib.pyplot as plt
 
-pid = PID.PID(kp = 1.0, ki = 11.0, kd = 0.0, proportionnalOnMeasurement=True, derivativeOnMeasurment=True, historianParams=(HistParams.ERROR | HistParams.OUTPUT | HistParams.PROCESS_VALUE | HistParams.SETPOINT | HistParams.P | HistParams.I | HistParams.D))
+pid = PID.PID(kp = 1.0, ki = 1.0, kd = 0.0, proportionnalOnMeasurement=True, derivativeOnMeasurment=True, processValueStableLimit=1.0, processValueStableTime=0.5, historianParams=(HistParams.ERROR | HistParams.OUTPUT | HistParams.PROCESS_VALUE | HistParams.SETPOINT | HistParams.P | HistParams.I | HistParams.D))
 system = Sim.Simulation(1.0, 0.1)
 
 startTime = time.time()
@@ -13,12 +13,19 @@ setpoint = 0.0
 
 timeLenght = 20.0
 
+memStable = False
+
 print("Start...")
 print(f"This will be take {timeLenght} secondes")
 
 while time.time() - startTime < timeLenght:
     if time.time() - startTime >= 1.0:
         setpoint = 10.0
+    
+    if (pid.processValueStabilized and not memStable):
+        print(f"PID stabilized at {pid._lastProcessValue}, {time.time() - startTime}")
+    
+    memStable = pid.processValueStabilized
     
     system(pid(system.output, setpoint))
 
