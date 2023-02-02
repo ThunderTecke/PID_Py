@@ -157,7 +157,7 @@ class PID:
     __call__(processValue, setpoint)
         call `compute`. Is a code simplification.
     """
-    def __init__(self, kp: float, ki: float, kd: float, indirectAction: bool = False, proportionnalOnMeasurement: bool = False, integralLimit: float = None, derivativeOnMeasurment: bool = False, setpointRamp: float = None, processValueStableLimit: float = None, processValueStableTime: float = 1.0, historianParams: HistorianParams = None, historianLenght: int = 100000, outputLimits: tuple[float, float] = (None, None), logger: logging.Logger = None) -> None:
+    def __init__(self, kp: float, ki: float, kd: float, indirectAction: bool = False, proportionnalOnMeasurement: bool = False, integralLimit: float = None, derivativeOnMeasurment: bool = False, setpointRamp: float = None, setpointStableLimit: float = None, setpointStableTime: float = 1.0, processValueStableLimit: float = None, processValueStableTime: float = 1.0, historianParams: HistorianParams = None, historianLenght: int = 100000, outputLimits: tuple[float, float] = (None, None), logger: logging.Logger = None) -> None:
         # PID parameters
         self.kp = kp
         self.ki = ki
@@ -170,6 +170,9 @@ class PID:
         self.derivativeOnMeasurement = derivativeOnMeasurment
 
         self.setpointRamp = setpointRamp
+
+        self.setpointStableLimit = setpointStableLimit
+        self.setpointStableTime = setpointStableTime
 
         self.processValueStableLimit = processValueStableLimit
         self.processValueStableTime = processValueStableTime
@@ -221,6 +224,7 @@ class PID:
         self._startTime = None
 
         self._processValueCurrStableTime = 0.0
+        self._setpointValueCurrStableTime = 0.0
 
         self._p = 0.0
         self._i = 0.0
@@ -231,6 +235,8 @@ class PID:
         # Outputs
         self.output = 0.0
         self.processValueStabilized = False
+        self.setpointReached = False
+        self.setpointCantBeReached = False
 
         # Logger
         self.logger = None
@@ -307,6 +313,16 @@ class PID:
                 error = processValue - self._setpoint
             else:
                 error = self._setpoint - processValue
+
+            # ===== Setpoint reached =====
+            if abs(error) < self.setpointStableLimit:
+                self._setpointValueCurrStableTime += deltaTime
+            else:
+                self._setpointValueCurrStableTime = 0.0
+            
+            self.setpointReached = self._setpointValueCurrStableTime > self.setpointStableTime
+
+            self.setpointCantBeReached = (not self.setpointReached and self.processValueStabilized)
             
             # ===== Proportionnal part =====
             if (not self.proportionnalOnMeasurement):
