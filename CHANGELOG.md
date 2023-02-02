@@ -1,5 +1,13 @@
 # Change log
 
+## [0.2.8] - 2023-02-02
+### Added
+- README.md updated
+
+### Modififed
+
+### Fixed
+
 ## [0.2.7] - 2023-02-02
 ### Added
 - Setpoint reached indicator added
