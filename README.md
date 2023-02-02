@@ -193,6 +193,23 @@ In the example above, the setpoint has a maximal ramp of 10 units per second.
 If the setpoint is change to 10 from 0, the real setpoint used will change for 1 second to 10.0.
 The same behavior in negative, but with `-setpointRamp`.
 
+### Setpoint reached by the process value
+The PID can return that the process value is stable on the setpoint. To configure it use `setpointStableLimit` to define the maximum difference between the process value and the setpoint (error) to considered the setpoint reached. And use `setpointStableTime` to define an amount of time to considered the setpoint reached
+
+```Python
+from PID_Py.PID import PID
+
+# Initialization
+pid = PID(kp = 0.0, ki = 0.0, kd = 0.0, setpointStableLimit=0.1, setpointStableTime=1.0)
+
+...
+
+# PID execution (call it as fast as you can)
+command = pid(processValue = feedback, setpoint = targetValue)
+```
+
+In the example abose, the output `setpointReached` is set to `True` when the error is between -0.1 and +0.1 for 1.0 second. If the error exceed +/- 0.1, the output is reset.
+
 ### Process value stabilized indicator
 The PID can return that the process value is stabilized, to configure it use `processValueStableLimit` to define the maximum variation when the process value is stable, and `processValueStableTime` to define the amount of time when the variation is below the limit.
 
