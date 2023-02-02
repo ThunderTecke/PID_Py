@@ -5,7 +5,7 @@ from PID_Py.PID import HistorianParams as HistParams
 import time
 import matplotlib.pyplot as plt
 
-pid = PID.PID(kp = 1.0, ki = 1.0, kd = 0.0, proportionnalOnMeasurement=True, derivativeOnMeasurment=True, processValueStableLimit=1.0, processValueStableTime=0.5, historianParams=(HistParams.ERROR | HistParams.OUTPUT | HistParams.PROCESS_VALUE | HistParams.SETPOINT | HistParams.P | HistParams.I | HistParams.D))
+pid = PID.PID(kp = 1.0, ki = 1.0, kd = 0.0, proportionnalOnMeasurement=True, derivativeOnMeasurment=True, integralLimit=50.0, setpointStableLimit=0.1, setpointStableTime=1.0, processValueStableLimit=0.1, processValueStableTime=1.0, historianParams=(HistParams.ERROR | HistParams.OUTPUT | HistParams.PROCESS_VALUE | HistParams.SETPOINT | HistParams.P | HistParams.I | HistParams.D))
 system = Sim.Simulation(1.0, 0.1)
 
 startTime = time.time()
@@ -13,7 +13,8 @@ setpoint = 0.0
 
 timeLenght = 20.0
 
-memStable = False
+memProcessValueStable = False
+memSetpointReached = False
 
 print("Start...")
 print(f"This will be take {timeLenght} secondes")
@@ -22,10 +23,21 @@ while time.time() - startTime < timeLenght:
     if time.time() - startTime >= 1.0:
         setpoint = 10.0
     
-    if (pid.processValueStabilized and not memStable):
+    if (pid.processValueStabilized and not memProcessValueStable):
         print(f"PID stabilized at {pid._lastProcessValue}, {time.time() - startTime}")
     
-    memStable = pid.processValueStabilized
+    if (not pid.processValueStabilized and memProcessValueStable):
+        print(f"PID unstable at {pid._lastProcessValue}, {time.time() - startTime}")
+    
+    memProcessValueStable = pid.processValueStabilized
+
+    if (pid.setpointReached and not memSetpointReached):
+        print(f"PID reache setpoint at {time.time() - startTime}")
+    
+    if (not pid.setpointReached and memSetpointReached):
+        print(f"PID leave the setpoint at {time.time() - startTime}")
+    
+    memSetpointReached = pid.setpointReached
     
     system(pid(system.output, setpoint))
 

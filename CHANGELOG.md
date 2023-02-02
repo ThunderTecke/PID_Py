@@ -1,5 +1,13 @@
 # Change log
 
+## [0.2.7] - 2023-02-02
+### Added
+- Setpoint reached indicator added
+
+### Modififed
+
+### Fixed
+
 ## [0.2.6] - 2023-01-28
 ### Added
 - Process value stabilized indication added

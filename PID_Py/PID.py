@@ -55,15 +55,22 @@ class PID:
         True  -> D = -kd * ((processValue - lastProcessValue) / dt)
     
     setpointRamp: float, default = None
-        Determine the maximum variation of the setpoint per second.
+        Determine the maximum variation of the setpoint per second (unit/s).
         If None, no ramps are applied.
+
+    setpointStableLimit: float, default = None
+        Determine the maximum difference between the setpoint and the process value (the error) to be considered stable on the setpoint.
+        If None, the PID will not be considered stabilized on the setpoint.
+
+    setpointStableTime: float, default = 1.0
+        Determine the amount of time (second) which the process value must be stabilized on the setpoint to activate `setpointReached` output.
     
     processValueStableLimit: float, default = None
         Determine the maximum variation to be considered stabilized.
         If None, the process value will not be considered stabilized.
     
     processValueStableTime: float, default = 1.0
-        Determine the amount of time which the process value must be stabilized to activate `processValueStabilized` output.
+        Determine the amount of time (second) which the process value must be stabilized to activate `processValueStabilized` output.
     
     historianParams: HistorianParams, default = None
         Configure historian to record some value of the PID. When at least one value is recorded, time is recorded too.
@@ -110,11 +117,20 @@ class PID:
     
     derivativeOnMeasurement: bool
         Same as `derivativeOnMeasurement` in parameters section
+    
+    setpointRamp: float
+        Same as `setpointRamp` in parameters section
+
+    setpointStableLimit: float
+        Same as `setpointStableLimit` in parameters section
+
+    setpointStableTime: float
+        Same as `setpointStableTime` in parameters section
 
     processValueStableLimit: float
         Same as `processValueStableLimit` in parameters section
     
-    self.processValueStableTime: float
+    processValueStableTime: float
         Same as `processValueStableTime` in parameters section
 
     outputLimits: float
@@ -236,7 +252,6 @@ class PID:
         self.output = 0.0
         self.processValueStabilized = False
         self.setpointReached = False
-        self.setpointCantBeReached = False
 
         # Logger
         self.logger = None
@@ -315,14 +330,16 @@ class PID:
                 error = self._setpoint - processValue
 
             # ===== Setpoint reached =====
-            if abs(error) < self.setpointStableLimit:
-                self._setpointValueCurrStableTime += deltaTime
+            if (self.setpointStableLimit is not None):
+                if abs(error) < self.setpointStableLimit:
+                    self._setpointValueCurrStableTime += deltaTime
+                else:
+                    self._setpointValueCurrStableTime = 0.0
+                
+                self.setpointReached = self._setpointValueCurrStableTime > self.setpointStableTime
             else:
                 self._setpointValueCurrStableTime = 0.0
-            
-            self.setpointReached = self._setpointValueCurrStableTime > self.setpointStableTime
-
-            self.setpointCantBeReached = (not self.setpointReached and self.processValueStabilized)
+                self.setpointReached = False
             
             # ===== Proportionnal part =====
             if (not self.proportionnalOnMeasurement):
@@ -515,8 +532,15 @@ class ThreadedPID(PID, Thread):
         True  -> D = -kd * ((processValue - lastProcessValue) / dt)
 
     setpointRamp: float, default = None
-        Determine the maximum variation of the setpoint per second.
+        Determine the maximum variation of the setpoint per second (unit/s).
         If None, no ramps are applied.
+
+    setpointStableLimit: float, default = None
+        Determine the maximum difference between the setpoint and the process value (the error) to be considered stable on the setpoint.
+        If None, the PID will not be considered stabilized on the setpoint.
+
+    setpointStableTime: float, default = 1.0
+        Determine the amount of time (second) which the process value must be stabilized on the setpoint to activate `setpointReached` output.
     
     processValueStableLimit: float, default = None
         Determine the maximum variation to be considered stabilized.
@@ -572,8 +596,8 @@ class ThreadedPID(PID, Thread):
     start()
         Used to start the thread.
     """
-    def __init__(self, kp: float, ki: float, kd: float, indirectAction: bool = False, proportionnalOnMeasurement: bool = False, integralLimit: float = None, derivativeOnMeasurment: bool = False, setpointRamp: float = None, processValueStableLimit: float = None, processValueStableTime: float = 1.0, historianParams: HistorianParams = None, historianLenght: int = 100000, outputLimits: tuple[float, float] = (None, None), logger: logging.Logger = None, cycleTime: float = 0.0) -> None:
-        PID.__init__(self, kp, ki, kd, indirectAction, proportionnalOnMeasurement, integralLimit, derivativeOnMeasurment, setpointRamp, processValueStableLimit, processValueStableTime, historianParams, historianLenght, outputLimits, logger)
+    def __init__(self, kp: float, ki: float, kd: float, indirectAction: bool = False, proportionnalOnMeasurement: bool = False, integralLimit: float = None, derivativeOnMeasurment: bool = False, setpointRamp: float = None, setpointStableLimit: float = None, setpointStableTime: float = 1.0, processValueStableLimit: float = None, processValueStableTime: float = 1.0, historianParams: HistorianParams = None, historianLenght: int = 100000, outputLimits: tuple[float, float] = (None, None), logger: logging.Logger = None, cycleTime: float = 0.0) -> None:
+        PID.__init__(self, kp, ki, kd, indirectAction, proportionnalOnMeasurement, integralLimit, derivativeOnMeasurment, setpointRamp, setpointStableLimit, setpointStableTime, processValueStableLimit, processValueStableTime, historianParams, historianLenght, outputLimits, logger)
         Thread.__init__(self)
 
         self.setpoint = 0.0
