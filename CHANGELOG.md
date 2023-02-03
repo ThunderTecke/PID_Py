@@ -1,6 +1,6 @@
 # Change log
 
-## [0.2.9] - 2023-02-02
+## [0.2.9] - 2023-02-03
 ### Added
 - Integral part freezing added
 
