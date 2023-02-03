@@ -6,7 +6,7 @@ import time
 import matplotlib.pyplot as plt
 
 pid = PID.PID(kp = 1.0, ki = 1.0, kd = 0.0, proportionnalOnMeasurement=True, derivativeOnMeasurment=True, integralLimit=50.0, setpointStableLimit=0.1, setpointStableTime=1.0, processValueStableLimit=0.1, processValueStableTime=1.0, historianParams=(HistParams.ERROR | HistParams.OUTPUT | HistParams.PROCESS_VALUE | HistParams.SETPOINT | HistParams.P | HistParams.I | HistParams.D))
-system = Sim.Simulation(1.0, 0.1)
+system = Sim.Simulation(1.0, 1.0)
 
 startTime = time.time()
 setpoint = 0.0
@@ -22,6 +22,12 @@ print(f"This will be take {timeLenght} secondes")
 while time.time() - startTime < timeLenght:
     if time.time() - startTime >= 1.0:
         setpoint = 10.0
+    
+    if time.time() - startTime >= 3.0:
+        pid.integralFreezing = True
+    
+    if time.time() - startTime >= 6.0:
+        pid.integralFreezing = False
     
     if (pid.processValueStabilized and not memProcessValueStable):
         print(f"PID stabilized at {pid._lastProcessValue}, {time.time() - startTime}")

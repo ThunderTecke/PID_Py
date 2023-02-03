@@ -136,6 +136,11 @@ class PID:
     outputLimits: float
         Same as `outputLimits` in parameters section
 
+    integralFreezing: bool
+        The integral part keep the same value until this option is activated.
+        It can used when a disturbance is known in advance. For example in a oven, when it's temperature is stable and you open the door, the temperature drops quickly.
+        But the door is closed again, then the temperature will rise to the previous temperature without heating more. So the integral part don't need to increase it's value to heating the oven.
+
     historianParams: HistorianParams
         Same as `historianParams` in parameters section
     
@@ -194,6 +199,8 @@ class PID:
         self.processValueStableTime = processValueStableTime
 
         self.outputLimits = outputLimits
+
+        self.integralFreezing = False
 
         # Manual mode
         self.manualMode = False
@@ -348,7 +355,7 @@ class PID:
                 self._p = -processValue * self.kp
 
             # ===== Integral part =====
-            if (not self.manualMode):
+            if (not self.manualMode and not self.integralFreezing):
                 self._i += ((error + self._lastError) / 2.0) * deltaTime * self.ki
 
             # Integral part limitation

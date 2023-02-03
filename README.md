@@ -173,6 +173,28 @@ pid = PID(kp = 0.0, ki = 0.0, kd = 0.0, derivativeOnMeasurement=True)
 command = pid(processValue = feedback, setpoint = targetValue)
 ```
 
+### Integral freezing
+When a known disturbance occur, the integral part can be freezed to avoid increasing of its value during the perturbance.
+For example, in a oven. When temperature is stable, and the door is opened the temperature drops quickly. And when the door is closed again, the temperature will rise to the previous temperature. So integral part value don't need to be increased to reach temperature setpoint.
+
+```Python
+from PID_Py.PID import PID
+
+# Initialization
+pid = PID(kp = 0.0, ki = 0.0, kd = 0.0)
+
+...
+
+pid.integralFreezing = doorIsOpened
+
+...
+
+# PID execution (call it as fast as you can)
+command = pid(processValue = feedback, setpoint = targetValue)
+```
+
+In the example above, the integral part value is freezed when the door is open. When the door is closed the integral part value resumes its calculation.
+
 ### Setpoint ramp
 The setpoint variation can be limited with `setpointRamp` option.
 This option allow to make a ramp with the setpoint when this one change.
