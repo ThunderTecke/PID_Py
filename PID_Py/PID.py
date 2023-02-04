@@ -65,6 +65,13 @@ class PID:
     setpointStableTime: float, default = 1.0
         Determine the amount of time (second) which the process value must be stabilized on the setpoint to activate `setpointReached` output.
     
+    deadband: float, defaut = None
+        Determine the interval ([-`deadband`, `deadband`]) on the error, where the integral part is no longer calculated.
+        If None, the deadband is ignored.
+
+    deadbandActivationTime: float, default = 1.0
+        Determine the amount of time which the error is in the deadband interval to stop the integral calculation.
+
     processValueStableLimit: float, default = None
         Determine the maximum variation to be considered stabilized.
         If None, the process value will not be considered stabilized.
@@ -564,6 +571,13 @@ class ThreadedPID(PID, Thread):
     setpointStableTime: float, default = 1.0
         Determine the amount of time (second) which the process value must be stabilized on the setpoint to activate `setpointReached` output.
     
+    deadband: float, defaut = None
+        Determine the interval ([-`deadband`, `deadband`]) on the error, where the integral part is no longer calculated.
+        If None, the deadband is ignored.
+
+    deadbandActivationTime: float, default = 1.0
+        Determine the amount of time which the error is in the deadband interval to stop the integral calculation.
+
     processValueStableLimit: float, default = None
         Determine the maximum variation to be considered stabilized.
         If None, the process value will not be considered stabilized.
@@ -618,8 +632,8 @@ class ThreadedPID(PID, Thread):
     start()
         Used to start the thread.
     """
-    def __init__(self, kp: float, ki: float, kd: float, indirectAction: bool = False, proportionnalOnMeasurement: bool = False, integralLimit: float = None, derivativeOnMeasurment: bool = False, setpointRamp: float = None, setpointStableLimit: float = None, setpointStableTime: float = 1.0, processValueStableLimit: float = None, processValueStableTime: float = 1.0, historianParams: HistorianParams = None, historianLenght: int = 100000, outputLimits: tuple[float, float] = (None, None), logger: logging.Logger = None, cycleTime: float = 0.0) -> None:
-        PID.__init__(self, kp, ki, kd, indirectAction, proportionnalOnMeasurement, integralLimit, derivativeOnMeasurment, setpointRamp, setpointStableLimit, setpointStableTime, processValueStableLimit, processValueStableTime, historianParams, historianLenght, outputLimits, logger)
+    def __init__(self, kp: float, ki: float, kd: float, indirectAction: bool = False, proportionnalOnMeasurement: bool = False, integralLimit: float = None, derivativeOnMeasurment: bool = False, setpointRamp: float = None, setpointStableLimit: float = None, setpointStableTime: float = 1.0, deadband: float = None, deadbandActivationTime: float = 1.0, processValueStableLimit: float = None, processValueStableTime: float = 1.0, historianParams: HistorianParams = None, historianLenght: int = 100000, outputLimits: tuple[float, float] = (None, None), logger: logging.Logger = None, cycleTime: float = 0.0) -> None:
+        PID.__init__(self, kp, ki, kd, indirectAction, proportionnalOnMeasurement, integralLimit, derivativeOnMeasurment, setpointRamp, setpointStableLimit, setpointStableTime, deadband, deadbandActivationTime, processValueStableLimit, processValueStableTime, historianParams, historianLenght, outputLimits, logger)
         Thread.__init__(self)
 
         self.setpoint = 0.0
