@@ -1,6 +1,14 @@
 # Change log
 
-## [0.2.9] - 2023-02-04
+## [0.2.11] - 2023-02-04
+### Added
+- Deadband class documentation added
+
+### Modififed
+
+### Fixed
+
+## [0.2.10] - 2023-02-04
 ### Added
 - Deadband added
 
