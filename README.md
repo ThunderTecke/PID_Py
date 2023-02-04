@@ -316,6 +316,28 @@ In the example above, the PID will send event on the logger. The logger can also
 pid = PID(kp = 0.0, ki = 0.0, kd = 0.0, logger = "PID")
 ```
 
+### Time simulation
+The time can be simulated by passing current time to the PID. This feature must not be used with a real application. It's only for simulation purpose.
+This allows to view the PID reaction quickly.
+
+```Python
+from PID_Py.PID import PID
+import numpy as np
+
+# Initialization
+pid = PID(kp = 0.0, ki = 0.0, kd = 0.0)
+timeValues = np.arange(0, 20.0, 0.001)
+
+...
+
+for t in timeValues:
+    # PID execution (call it as fast as you can)
+    command = pid(processValue = feedback, setpoint = targetValue, t = t)
+```
+
+In the example above `timeValues` is a numpy array that contain [0.0, 0.001, 0.002, 0.003, ..., 19.999]. And with the for loop, we can calculate 20 seconds very quickly.
+And then use the historian to view the PID reaction.
+
 ### Threaded PID
 With the threaded PID you don't have to call `pid(processValue, setpoint)`. It's call as fast as possible or with a constant cycle time. When you want to stop the PID use `quit` attribute to finish the current execution and exit. 
 
