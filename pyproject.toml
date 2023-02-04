@@ -7,7 +7,7 @@ packages = ["PID_Py"]
 
 [project]
 name = "PID_Py"
-version = "0.2.9"
+version = "0.2.10"
 authors = [{name = "ThunderTecke", email = "thunder.tecke@gmail.com"}]
 maintainers = [{name = "ThunderTecke", email = "thunder.tecke@gmail.com"}]
 keywords = ["pid", "controller", "pid-controller", "control", "pid-control", "python", "raspberry", "raspberrypi", "raspberry-pi"]

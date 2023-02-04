@@ -195,6 +195,23 @@ command = pid(processValue = feedback, setpoint = targetValue)
 
 In the example above, the integral part value is freezed when the door is open. When the door is closed the integral part value resumes its calculation.
 
+### Deadband
+A deadband can be set, by default its deactivated. It can be activated by entering a value to `deadband`. When the error is between [-`deadband`, `deadband`] for `deadbandActivationTime` (in second) the integral is no longer calculated. If the error exceed `deadband` the integral part recalculated.
+
+```Python
+from PID_Py.PID import PID
+
+# Initialization
+pid = PID(kp = 0.0, ki = 0.0, kd = 0.0, deadband=1.0, deadbandActivationTime = 10.0)
+
+...
+
+# PID execution (call it as fast as you can)
+command = pid(processValue = feedback, setpoint = targetValue)
+```
+
+In the example above, the PID behaves normally until the error is lower than 1 for 10 seconds. The integral part stops. Then when the error is higher than 1.0 the integral is recalculated.
+
 ### Setpoint ramp
 The setpoint variation can be limited with `setpointRamp` option.
 This option allow to make a ramp with the setpoint when this one change.

@@ -5,7 +5,7 @@ from PID_Py.PID import HistorianParams as HistParams
 import time
 import matplotlib.pyplot as plt
 
-pid = PID.PID(kp = 1.0, ki = 1.0, kd = 0.0, proportionnalOnMeasurement=True, derivativeOnMeasurment=True, integralLimit=50.0, setpointStableLimit=0.1, setpointStableTime=1.0, processValueStableLimit=0.1, processValueStableTime=1.0, historianParams=(HistParams.ERROR | HistParams.OUTPUT | HistParams.PROCESS_VALUE | HistParams.SETPOINT | HistParams.P | HistParams.I | HistParams.D))
+pid = PID.PID(kp = 1.0, ki = 1.0, kd = 0.0, deadband=1.0, deadbandActivationTime=5.0, proportionnalOnMeasurement=True, derivativeOnMeasurment=True, integralLimit=50.0, setpointStableLimit=0.1, setpointStableTime=1.0, processValueStableLimit=0.1, processValueStableTime=1.0, historianParams=(HistParams.ERROR | HistParams.OUTPUT | HistParams.PROCESS_VALUE | HistParams.SETPOINT | HistParams.P | HistParams.I | HistParams.D))
 system = Sim.Simulation(1.0, 1.0)
 
 startTime = time.time()
@@ -23,25 +23,17 @@ while time.time() - startTime < timeLenght:
     if time.time() - startTime >= 1.0:
         setpoint = 10.0
     
-    if time.time() - startTime >= 3.0:
-        pid.integralFreezing = True
+    if time.time() - startTime >= 10.0:
+        setpoint = 10.5
     
-    if time.time() - startTime >= 6.0:
-        pid.integralFreezing = False
-    
-    if (pid.processValueStabilized and not memProcessValueStable):
-        print(f"PID stabilized at {pid._lastProcessValue}, {time.time() - startTime}")
-    
-    if (not pid.processValueStabilized and memProcessValueStable):
-        print(f"PID unstable at {pid._lastProcessValue}, {time.time() - startTime}")
-    
-    memProcessValueStable = pid.processValueStabilized
+    if time.time() - startTime >= 11.0:
+        setpoint = 11.5
 
     if (pid.setpointReached and not memSetpointReached):
-        print(f"PID reache setpoint at {time.time() - startTime}")
+        print(f"PID reache setpoint at {(time.time() - startTime):.1f}s")
     
     if (not pid.setpointReached and memSetpointReached):
-        print(f"PID leave the setpoint at {time.time() - startTime}")
+        print(f"PID leave the setpoint at {(time.time() - startTime):.1f}s")
     
     memSetpointReached = pid.setpointReached
     
