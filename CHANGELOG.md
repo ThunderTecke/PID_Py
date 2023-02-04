@@ -1,6 +1,14 @@
 # Change log
 
-## [0.2.9] - 2023-02-02
+## [0.2.9] - 2023-02-04
+### Added
+- Deadband added
+
+### Modififed
+
+### Fixed
+
+## [0.2.9] - 2023-02-03
 ### Added
 - Integral part freezing added
 

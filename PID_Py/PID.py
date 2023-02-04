@@ -178,7 +178,7 @@ class PID:
     __call__(processValue, setpoint)
         call `compute`. Is a code simplification.
     """
-    def __init__(self, kp: float, ki: float, kd: float, indirectAction: bool = False, proportionnalOnMeasurement: bool = False, integralLimit: float = None, derivativeOnMeasurment: bool = False, setpointRamp: float = None, setpointStableLimit: float = None, setpointStableTime: float = 1.0, processValueStableLimit: float = None, processValueStableTime: float = 1.0, historianParams: HistorianParams = None, historianLenght: int = 100000, outputLimits: tuple[float, float] = (None, None), logger: logging.Logger = None) -> None:
+    def __init__(self, kp: float, ki: float, kd: float, indirectAction: bool = False, proportionnalOnMeasurement: bool = False, integralLimit: float = None, derivativeOnMeasurment: bool = False, setpointRamp: float = None, setpointStableLimit: float = None, setpointStableTime: float = 1.0, deadband: float = None, deadbandActivationTime: float = 1.0, processValueStableLimit: float = None, processValueStableTime: float = 1.0, historianParams: HistorianParams = None, historianLenght: int = 100000, outputLimits: tuple[float, float] = (None, None), logger: logging.Logger = None) -> None:
         # PID parameters
         self.kp = kp
         self.ki = ki
@@ -194,6 +194,9 @@ class PID:
 
         self.setpointStableLimit = setpointStableLimit
         self.setpointStableTime = setpointStableTime
+
+        self.deadband = deadband
+        self.deadbandActivationTime = deadbandActivationTime
 
         self.processValueStableLimit = processValueStableLimit
         self.processValueStableTime = processValueStableTime
@@ -248,6 +251,7 @@ class PID:
 
         self._processValueCurrStableTime = 0.0
         self._setpointValueCurrStableTime = 0.0
+        self._deadbandTime = 0.0
 
         self._p = 0.0
         self._i = 0.0
@@ -354,8 +358,17 @@ class PID:
             else:
                 self._p = -processValue * self.kp
 
+            # ===== Deadband =====
+            if (self.deadband is not None):
+                if (abs(error) < self.deadband):
+                    self._deadbandTime += deltaTime
+                else:
+                    self._deadbandTime = 0.0
+            else:
+                self._deadbandTime = 0.0
+
             # ===== Integral part =====
-            if (not self.manualMode and not self.integralFreezing):
+            if (not self.manualMode and not self.integralFreezing and (self._deadbandTime < self.deadbandActivationTime)):
                 self._i += ((error + self._lastError) / 2.0) * deltaTime * self.ki
 
             # Integral part limitation
@@ -418,6 +431,9 @@ class PID:
             # Interal part equal to output in manual mode
             if (self.manualMode):
                 self._i = _output - self._p
+            
+            # ===== Output =====
+            self.output = _output
 
             # ===== Historian =====
             if HistorianParams.P in self.historianParams:
@@ -439,7 +455,7 @@ class PID:
                     del self.historianLenght["D"][0]
             
             if HistorianParams.OUTPUT in self.historianParams:
-                self.historian["OUTPUT"].append(_output)
+                self.historian["OUTPUT"].append(self.output)
                 
                 if len(self.historian["OUTPUT"]) > self.historianLenght:
                     del self.historianLenght["OUTPUT"][0]
@@ -473,7 +489,6 @@ class PID:
             self._lastTime = actualTime
             self._lastProcessValue = processValue
 
-            self.output = _output
             return self.output
         else: # First execution
             self._startTime = time.time()
