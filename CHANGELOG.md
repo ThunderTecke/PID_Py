@@ -1,8 +1,9 @@
 # Change log
 
-## [0.2.11] - 2023-02-04
+## [0.3.0] - 2023-02-04
 ### Added
 - Deadband class documentation added
+- Time simulation added
 
 ### Modififed
 

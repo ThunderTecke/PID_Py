@@ -286,7 +286,7 @@ class PID:
         self.outputLimitsReached = False
         self.memoutputLimitsReached = False
 
-    def compute(self, processValue: float, setpoint: float) -> float:
+    def compute(self, processValue: float, setpoint: float, currentTime: float = None) -> float:
         """
         PID calculation execution
 
@@ -297,6 +297,10 @@ class PID:
         
         setpoint: float
             The target value for the PID
+        
+        currentTime: float, default = None
+            The current time. For simulation purpose only.
+            Leave it to None for a real application.
         
         Returns
         -------
@@ -311,10 +315,14 @@ class PID:
         
         self.memManualMode = self.manualMode
         
+        if (currentTime is None):
+            actualTime = time.time()
+        else:
+            actualTime = currentTime
+        
         # PID calculation
         if self._startTime is not None and self._lastTime is not None:
             # ===== Delta time =====
-            actualTime = time.time()
             deltaTime = actualTime - self._lastTime
 
             # Process value stabilization
@@ -498,13 +506,13 @@ class PID:
 
             return self.output
         else: # First execution
-            self._startTime = time.time()
-            self._lastTime = time.time()
+            self._startTime = actualTime
+            self._lastTime = actualTime
 
             self.output = 0.0
             return 0.0
 
-    def __call__(self, processValue: float, setpoint: float) -> float:
+    def __call__(self, processValue: float, setpoint: float, currentTime: float = None) -> float:
         """
         call `compute`. Is a code simplification.
         
@@ -515,13 +523,17 @@ class PID:
         
         setpoint: float
             The target value for the PID
+
+        currentTime: float, default = None
+            The current time. For simulation purpose only.
+            Leave it to None for a real application.
         
         Returns
         -------
         float
             Return the PID output (same as `self.output`)
         """
-        return self.compute(processValue, setpoint)
+        return self.compute(processValue, setpoint, currentTime)
 
 class ThreadedPID(PID, Thread):
     """
