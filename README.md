@@ -5,11 +5,32 @@
 [![GitHub issues](https://img.shields.io/github/issues/ThunderTecke/PID_Py)](https://github.com/ThunderTecke/PID_Py/issues)
 ![Python version](https://img.shields.io/badge/Python-v3.10-blue)
 
-# PID_Py
+# PID_Py <!-- omit in toc -->
 `PID_Py` provide a PID controller written in Python. This PID controller is simple to use, but it's complete.
 
-## :bangbang: Non-responsability :bangbang:
+## :bangbang: Non-responsability :bangbang: <!-- omit in toc -->
 ***<span style="color:red">I am not responsible for any material or personal damages in case of failure. Use at your own risk.</span>***
+
+## Table of content  <!-- omit in toc -->
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Minimum usage](#minimum-usage)
+  - [Indirect action PID](#indirect-action-pid)
+  - [Integral limitation](#integral-limitation)
+  - [Limiting output](#limiting-output)
+  - [Historian](#historian)
+    - [Historian parameters list](#historian-parameters-list)
+  - [Proportionnal on measurement](#proportionnal-on-measurement)
+  - [Derivative on measurement](#derivative-on-measurement)
+  - [Integral freezing](#integral-freezing)
+  - [Deadband](#deadband)
+  - [Setpoint ramp](#setpoint-ramp)
+  - [Setpoint reached by the process value](#setpoint-reached-by-the-process-value)
+  - [Process value stabilized indicator](#process-value-stabilized-indicator)
+  - [Manual mode](#manual-mode)
+  - [Logging](#logging)
+  - [Time simulation](#time-simulation)
+  - [Threaded PID](#threaded-pid)
 
 ## Installation
 ```
@@ -17,7 +38,7 @@ python3 -m pip install PID_Py
 ```
 
 ## Usage
-### Minimum usage 
+### Minimum usage
 ```Python
 from PID_Py.PID import PID
 
@@ -46,6 +67,24 @@ pid = PID(kp = 0.0, ki = 0.0, kd = 0.0, indirectAction = True)
 # PID execution (call it as fast as you can)
 command = pid(processValue = feedback, setpoint = targetValue)
 ```
+
+### Integral limitation
+The integral part of the PID can be limit to avoid overshoot of the output when the error is too high (When the setpoint variation is too high, or when the system have trouble to reach setpoint).
+
+```Python
+from PID_Py.PID import PID
+
+# Initialization
+pid = PID(kp = 0.0, ki = 0.0, kd = 0.0, integralLimit = 20.0)
+
+...
+
+# PID execution (call it as fast as you can)
+command = pid(processValue = feedback, setpoint = targetValue)
+```
+
+In the example above, the integral part of the PID is clamped between -20 and 20.
+
 
 ### Limiting output
 If your command must be limit you can use `outputLimits` parameters.
@@ -135,22 +174,6 @@ pid = PID(kp = 0.0, ki = 0.0, kd = 0.0, proportionnalOnMeasurement=True)
 command = pid(processValue = feedback, setpoint = targetValue)
 ```
 
-### Integral limitation
-The integral part of the PID can be limit to avoid overshoot of the output when the error is too high (When the setpoint variation is too high, or when the system have trouble to reach setpoint).
-
-```Python
-from PID_Py.PID import PID
-
-# Initialization
-pid = PID(kp = 0.0, ki = 0.0, kd = 0.0, integralLimit = 20.0)
-
-...
-
-# PID execution (call it as fast as you can)
-command = pid(processValue = feedback, setpoint = targetValue)
-```
-
-In the example above, the integral part of the PID is clamped between -20 and 20.
 
 ### Derivative on measurement
 This avoid a strong response of derivate part when the setpoint is suddenly changed. 
