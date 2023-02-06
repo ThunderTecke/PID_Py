@@ -43,13 +43,15 @@ python3 -m pip install PID_Py
 from PID_Py.PID import PID
 
 # Initialization
-pid = PID(kp = 0.0, ki = 0.0, kd = 0.0)
+pid = PID(kp = 10.0, ki = 1.0, kd = 0.0)
 
 ...
 
 # PID execution (call it as fast as you can)
 command = pid(processValue = feedback, setpoint = targetValue)
 ```
+
+![Minimum usage](readmeImages/minUsage.png)
 
 In this usage the PID as no limitation, no history and the PID is in direct action (Error increasing -> Increase output).
 
