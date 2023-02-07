@@ -355,7 +355,7 @@ command = pid(processValue = feedback, setpoint = targetValue)
 In the example above, the PID will send event on the logger. The logger can also get with the name.
 
 ```Python
-pid = PID(kp = 0.0, ki = 0.0, kd = 0.0, logger = "PID")
+pid = PID(kp = 2.0, ki = 5.0, kd = 0.0, logger = "PID")
 ```
 
 ### Time simulation
