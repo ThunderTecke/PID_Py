@@ -12,9 +12,14 @@ class Simulation:
         # Output
         self.output = 0.0
         
-    def __call__(self, input: float) -> float:
+    def __call__(self, input: float, t: float = None) -> float:
+        if (t is None):
+            actualTime = time.time()
+        else:
+            actualTime = t
+
         if self._lastTime is not None:
-            deltaTime = time.time() - self._lastTime
+            deltaTime = actualTime - self._lastTime
             self.output += (1.0/self.tau) * ((self.K * input) - self.output) * deltaTime
         
-        self._lastTime = time.time()
+        self._lastTime = actualTime

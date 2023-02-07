@@ -1,6 +1,23 @@
 # Change log
 
-## [0.2.9] - 2023-02-04
+## [1.0.0] - 2023-02-06
+### Added
+
+### Modififed
+- README.md remade
+
+### Fixed
+
+## [0.3.0] - 2023-02-04
+### Added
+- Deadband class documentation added
+- Time simulation added
+
+### Modififed
+
+### Fixed
+
+## [0.2.10] - 2023-02-04
 ### Added
 - Deadband added
 
