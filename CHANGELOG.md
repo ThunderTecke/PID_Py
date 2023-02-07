@@ -1,5 +1,13 @@
 # Change log
 
+## [1.0.0] - 2023-02-06
+### Added
+
+### Modififed
+- README.md remade
+
+### Fixed
+
 ## [0.3.0] - 2023-02-04
 ### Added
 - Deadband class documentation added
