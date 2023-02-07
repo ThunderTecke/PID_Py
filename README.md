@@ -43,7 +43,7 @@ python3 -m pip install PID_Py
 from PID_Py.PID import PID
 
 # Initialization
-pid = PID(kp = 10.0, ki = 1.0, kd = 0.0)
+pid = PID(kp = 10.0, ki = 5.0, kd = 0.0)
 
 ...
 
@@ -98,7 +98,7 @@ If your command must be limit you can use `outputLimits` parameters.
 from PID_Py.PID import PID
 
 # Initialization
-pid = PID(kp = 10.0, ki = 5.0, kd = 0.0, outputLimits = (0, 100))
+pid = PID(kp = 10.0, ki = 5.0, kd = 0.0, outputLimits = (-20, 20))
 
 ...
 
@@ -182,7 +182,7 @@ In the example above, the integral part value is freezed when the door is open. 
 The door is opened  between 5 and 7 second. For the example, the setpoint is increase during the freezing.
 
 ### Deadband
-A deadband can be set, by default its deactivated. It can be activated by entering a value to `deadband`. When the error is between [-`deadband`, `deadband`] for `deadbandActivationTime` (in second) the integral is no longer calculated. If the error exceed `deadband` the integral part recalculated.
+A deadband can be set, by default its deactivated. It can be activated by entering a value to `deadband`. When the error is between [-`deadband`, `deadband`] for `deadbandActivationTime` (in second) the integral is no longer calculated. If the error exceed `deadband` the integral part is recalculated.
 
 ```Python
 from PID_Py.PID import PID
@@ -285,7 +285,7 @@ plt.plot(pid.historian["TIME"], pid.historian["PROCESS_VALUE"], label="Process v
 plt.legend()
 plt.show()
 ```
-In the example above, the PID historian records `setpoint`, `processValue` and `time`. Time is the elapsed time from the start. After that a graphic is draw with `matplotlib`.
+In the example above, the PID historian records `setpoint`, `processValue`. `time` is also recorded when at least one parameter is recorded. Time is the elapsed time from the start. After that a graphic is draw with `matplotlib`.
 
 #### Historian parameters list
 - `P` : proportionnal part
