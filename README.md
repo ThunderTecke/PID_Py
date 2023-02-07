@@ -229,7 +229,7 @@ The PID can return that the process value is stable on the setpoint. To configur
 from PID_Py.PID import PID
 
 # Initialization
-pid = PID(kp = 0.0, ki = 0.0, kd = 0.0, setpointStableLimit=0.1, setpointStableTime=1.0)
+pid = PID(kp = 2.0, ki = 5.0, kd = 0.0, setpointStableLimit=0.1, setpointStableTime=1.0)
 
 ...
 
@@ -246,7 +246,7 @@ The PID can return that the process value is stabilized, to configure it use `pr
 from PID_Py.PID import PID
 
 # Initialization
-pid = PID(kp = 0.0, ki = 0.0, kd = 0.0, processValueStableLimit=0.1, processValueStableTime=1.0)
+pid = PID(kp = 2.0, ki = 5.0, kd = 0.0, processValueStableLimit=0.1, processValueStableTime=1.0)
 
 ...
 
@@ -315,7 +315,7 @@ The PID can be switch in manual mode, this allow to operate output directly thro
 from PID_Py.PID import PID
 
 # Initialization
-pid = PID(kp = 0.0, ki = 0.0, kd = 0.0)
+pid = PID(kp = 2.0, ki = 5.0, kd = 0.0)
 
 ...
 
@@ -344,7 +344,7 @@ from PID_Py.PID import PID
 import logging
 
 # Initialization
-pid = PID(kp = 0.0, ki = 0.0, kd = 0.0, logger = logging.getLogger("PID"))
+pid = PID(kp = 2.0, ki = 5.0, kd = 0.0, logger = logging.getLogger("PID"))
 
 ...
 
@@ -367,7 +367,7 @@ from PID_Py.PID import PID
 import numpy as np
 
 # Initialization
-pid = PID(kp = 0.0, ki = 0.0, kd = 0.0)
+pid = PID(kp = 2.0, ki = 5.0, kd = 0.0)
 timeValues = np.arange(0, 20.0, 0.001)
 
 ...
@@ -387,7 +387,7 @@ With the threaded PID you don't have to call `pid(processValue, setpoint)`. It's
 from PID_Py.PID import ThreadedPID
 
 # Initialization
-pid = ThreadedPID(kp = 0.0, ki = 0.0, kd = 0.0, cycleTime = 0.01)
+pid = ThreadedPID(kp = 2.0, ki = 5.0, kd = 0.0, cycleTime = 0.01)
 pid.start()
 
 ...
