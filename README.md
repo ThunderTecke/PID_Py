@@ -31,6 +31,7 @@
   - [Logging](#logging)
   - [Time simulation](#time-simulation)
   - [Threaded PID](#threaded-pid)
+  - [Simulation](#simulation)
 
 ## Installation
 ```
@@ -48,7 +49,7 @@ pid = PID(kp = 10.0, ki = 5.0, kd = 0.0)
 ...
 
 # PID execution (call it as fast as you can)
-command = pid(processValue = feedback, setpoint = targetValue)
+command = pid(setpoint = targetValue, processValue = feedback)
 ```
 
 ![Minimum usage](readmeImages/minUsage.png)
@@ -67,7 +68,7 @@ pid = PID(kp = 10.0, ki = 5.0, kd = 0.0, indirectAction = True)
 ...
 
 # PID execution (call it as fast as you can)
-command = pid(processValue = feedback, setpoint = targetValue)
+command = pid(setpoint = targetValue, processValue = feedback)
 ```
 
 ![Indirect action](readmeImages/indirectAction.png)
@@ -84,7 +85,7 @@ pid = PID(kp = 10.0, ki = 5.0, kd = 0.0, integralLimit = 20.0)
 ...
 
 # PID execution (call it as fast as you can)
-command = pid(processValue = feedback, setpoint = targetValue)
+command = pid(setpoint = targetValue, processValue = feedback)
 ```
 
 ![Integral limit](readmeImages/integralLimit.png)
@@ -103,7 +104,7 @@ pid = PID(kp = 10.0, ki = 5.0, kd = 0.0, outputLimits = (-20, 20))
 ...
 
 # PID execution (call it as fast as you can)
-command = pid(processValue = feedback, setpoint = targetValue)
+command = pid(setpoint = targetValue, processValue = feedback)
 ```
 
 ![Output limit](readmeImages/outputLmit.png)
@@ -128,7 +129,7 @@ pid = PID(kp = 3.0, ki = 5.0, kd = 0.0, proportionnalOnMeasurement=True)
 ...
 
 # PID execution (call it as fast as you can)
-command = pid(processValue = feedback, setpoint = targetValue)
+command = pid(setpoint = targetValue, processValue = feedback)
 ```
 
 ![Proportionnal on measurement](readmeImages/proportionnalOnMeasurement.png)
@@ -151,7 +152,7 @@ pid = PID(kp = 10.0, ki = 5.0, kd = 0.2, derivativeOnMeasurement=True)
 ...
 
 # PID execution (call it as fast as you can)
-command = pid(processValue = feedback, setpoint = targetValue)
+command = pid(setpoint = targetValue, processValue = feedback)
 ```
 
 ![Derivative on measurement](readmeImages/derivativeOnMeasurement.png)
@@ -173,7 +174,7 @@ pid.integralFreezing = doorIsOpened
 ...
 
 # PID execution (call it as fast as you can)
-command = pid(processValue = feedback, setpoint = targetValue)
+command = pid(setpoint = targetValue, processValue = feedback)
 ```
 
 ![Integral frezing](readmeImages/integralFreezing.png)
@@ -193,7 +194,7 @@ pid = PID(kp = 2.0, ki = 5.0, kd = 0.0, deadband=1.0, deadbandActivationTime = 1
 ...
 
 # PID execution (call it as fast as you can)
-command = pid(processValue = feedback, setpoint = targetValue)
+command = pid(setpoint = targetValue, processValue = feedback)
 ```
 
 ![Deadband](readmeImages/deadband.png)
@@ -213,7 +214,7 @@ pid = PID(kp = 2.0, ki = 5.0, kd = 0.0, setpointRamp=10.0)
 ...
 
 # PID execution (call it as fast as you can)
-command = pid(processValue = feedback, setpoint = targetValue)
+command = pid(setpoint = targetValue, processValue = feedback)
 ```
 
 ![Setpoint ramp](readmeImages/setpointRamp.png)
@@ -234,7 +235,7 @@ pid = PID(kp = 2.0, ki = 5.0, kd = 0.0, setpointStableLimit=0.1, setpointStableT
 ...
 
 # PID execution (call it as fast as you can)
-command = pid(processValue = feedback, setpoint = targetValue)
+command = pid(setpoint = targetValue, processValue = feedback)
 ```
 
 In the example abose, the output `setpointReached` is set to `True` when the error is between -0.1 and +0.1 for 1.0 second. If the error exceed +/- 0.1, the output is reset.
@@ -251,7 +252,7 @@ pid = PID(kp = 2.0, ki = 5.0, kd = 0.0, processValueStableLimit=0.1, processValu
 ...
 
 # PID execution (call it as fast as you can)
-command = pid(processValue = feedback, setpoint = targetValue)
+command = pid(setpoint = targetValue, processValue = feedback)
 ```
 
 In the example above, the output `processValueStabilized` is set to `True` when the process value variation do not exceed +/- 0.1 unit/s for 1.0 second. If the process value variation exceed +/- 0.1 unit/s the output `processValueStabilized` is set to `False`.
@@ -271,7 +272,7 @@ pid = PID(kp = 10.0, ki = 5.0, kd = 0.0, historianParameters = HistorianParamete
 ...
 
 # PID execution (call it as fast as you can)
-command = pid(processValue = feedback, setpoint = targetValue)
+command = pid(setpoint = targetValue, processValue = feedback)
 
 ...
 
@@ -326,7 +327,7 @@ pid.manualValue = 12.7
 ...
 
 # PID execution (call it as fast as you can)
-command = pid(processValue = feedback, setpoint = targetValue)
+command = pid(setpoint = targetValue, processValue = feedback)
 ```
 
 In the example above, command will be always equal to 12.7. The PID calculation is no longer executed. The integral part is keep equal to output minus proportionnal part, this allow a smooth switching to automatic.
@@ -349,7 +350,7 @@ pid = PID(kp = 2.0, ki = 5.0, kd = 0.0, logger = logging.getLogger("PID"))
 ...
 
 # PID execution (call it as fast as you can)
-command = pid(processValue = feedback, setpoint = targetValue)
+command = pid(setpoint = targetValue, processValue = feedback)
 ```
 
 In the example above, the PID will send event on the logger. The logger can also get with the name.
@@ -374,7 +375,7 @@ timeValues = np.arange(0, 20.0, 0.001)
 
 for t in timeValues:
     # PID execution (call it as fast as you can)
-    command = pid(processValue = feedback, setpoint = targetValue, t = t)
+    command = pid(setpoint = targetValue, processValue = feedback, t = t)
 ```
 
 In the example above `timeValues` is a numpy array that contain [0.0, 0.001, 0.002, 0.003, ..., 19.999]. And with the for loop, we can calculate 20 seconds very quickly.
@@ -407,3 +408,19 @@ pid.join()
 ```
 
 In the example above the threaded PID is created with 10ms (0.01s) of cyclic time. It means that the calculation is executed each 10ms.
+
+### Simulation
+A simulation can be activate to simulate a real application.
+
+```Python
+from PID_Py.PID import PID
+from PID_Py.Simulation import Simulation
+
+# Initialization
+simulation = Simulation(K = 1.0, tau = 0.1)
+pid = PID(kp = 2.0, ki = 5.0, kd = 0.0, simulation=simulation)
+
+...
+
+command = pid(setpoint = targetValue)
+```

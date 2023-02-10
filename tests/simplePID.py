@@ -6,8 +6,7 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 
-pid = PID.PID(kp = 2.0, ki = 5.0, kd = 0.0, setpointRamp=10.0, historianParams=(HistParams.ERROR | HistParams.OUTPUT | HistParams.PROCESS_VALUE | HistParams.SETPOINT | HistParams.P | HistParams.I | HistParams.D))
-system = Sim.Simulation(1.0, 1.0)
+pid = PID.PID(kp = 1.0, ki = 0.1, kd = 0.0, logger="PID", simulation=Sim.Simulation(1.0, 0.1), historianParams=(HistParams.ERROR | HistParams.OUTPUT | HistParams.PROCESS_VALUE | HistParams.SETPOINT | HistParams.P | HistParams.I | HistParams.D))
 
 startTime = time.time()
 setpoint = 0.0
@@ -26,7 +25,7 @@ for t in timeValue:
     if t >= 1.0:
         setpoint = 10.0
     
-    system(pid(system.output, setpoint, t), t)
+    pid(setpoint = setpoint, currentTime = t)
 
 fig, (systemPlot, pidPlot, outputPlot) = plt.subplots(3, sharex=True)
 
