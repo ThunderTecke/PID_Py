@@ -1,5 +1,13 @@
 # Change log
 
+## [1.1.0] - 2023-02-10
+### Added
+- Simulation mode added
+
+### Modififed
+
+### Fixed
+
 ## [1.0.0] - 2023-02-06
 ### Added
 

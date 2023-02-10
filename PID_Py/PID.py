@@ -2,7 +2,7 @@ import time
 from enum import Flag, auto
 from threading import Thread
 import logging
-import math
+from PID_Py.Simulation import Simulation
 
 class HistorianParams(Flag):
     """
@@ -102,6 +102,9 @@ class PID:
         Logging system. `logging.Logger` instance or logger name (str) can be passed.
         If it's anything else (None or other type), the PID will not send any log.
     
+    simulation: Simulation, default = None
+        Pass a simulation object to activate simulation.
+    
     Attributes
     ----------
     kp: float
@@ -176,6 +179,9 @@ class PID:
     
     logger: logging.Logger
         Contain the `logging.Logger` instance. If it's None or other type, the PID will not send any log.
+
+    simulation: Simulation
+        Same as `simulation` in parameters section.
     
     Methods
     -------
@@ -185,7 +191,7 @@ class PID:
     __call__(processValue, setpoint)
         call `compute`. Is a code simplification.
     """
-    def __init__(self, kp: float, ki: float, kd: float, indirectAction: bool = False, proportionnalOnMeasurement: bool = False, integralLimit: float = None, derivativeOnMeasurment: bool = False, setpointRamp: float = None, setpointStableLimit: float = None, setpointStableTime: float = 1.0, deadband: float = None, deadbandActivationTime: float = 1.0, processValueStableLimit: float = None, processValueStableTime: float = 1.0, historianParams: HistorianParams = None, historianLenght: int = 100000, outputLimits: tuple[float, float] = (None, None), logger: logging.Logger = None) -> None:
+    def __init__(self, kp: float, ki: float, kd: float, indirectAction: bool = False, proportionnalOnMeasurement: bool = False, integralLimit: float = None, derivativeOnMeasurement: bool = False, setpointRamp: float = None, setpointStableLimit: float = None, setpointStableTime: float = 1.0, deadband: float = None, deadbandActivationTime: float = 1.0, processValueStableLimit: float = None, processValueStableTime: float = 1.0, historianParams: HistorianParams = None, historianLenght: int = 100000, outputLimits: tuple[float, float] = (None, None), logger: logging.Logger = None, simulation: Simulation = None) -> None:
         # PID parameters
         self.kp = kp
         self.ki = ki
@@ -195,7 +201,7 @@ class PID:
 
         self.proportionnalOnMeasurement = proportionnalOnMeasurement
         self.integralLimit = integralLimit
-        self.derivativeOnMeasurement = derivativeOnMeasurment
+        self.derivativeOnMeasurement = derivativeOnMeasurement
 
         self.setpointRamp = setpointRamp
 
@@ -286,27 +292,35 @@ class PID:
         self.outputLimitsReached = False
         self.memoutputLimitsReached = False
 
-    def compute(self, processValue: float, setpoint: float, currentTime: float = None) -> float:
+        # Simulation
+        self.simulation = simulation
+
+    def compute(self, setpoint: float, processValue: float = None, currentTime: float = None) -> float:
         """
         PID calculation execution
 
         Parameters
         ----------
-        processValue: float
-            The actual system feedback
-        
         setpoint: float
             The target value for the PID
-        
+
+        processValue: float, default = None
+            The actual system feedback
+            Leave it to `None` when the simulation is used.
+
         currentTime: float, default = None
             The current time. For simulation purpose only.
-            Leave it to None for a real application.
+            Leave it to `None` for a real application.
         
         Returns
         -------
         float
             Return the PID output (same as `self.output`)
         """
+        # Process value
+        if processValue is None:
+            processValue = self.simulation.output
+        
         # Logging mode switching
         if (self.manualMode and not self.memManualMode and isinstance(self.logger, logging.Logger)):
             self.logger.info("PID switched to manual mode")
@@ -504,6 +518,10 @@ class PID:
             self._lastTime = actualTime
             self._lastProcessValue = processValue
 
+            # ===== Simulation =====
+            if self.simulation is not None:
+                self.simulation(self.output, actualTime)
+
             return self.output
         else: # First execution
             self._startTime = actualTime
@@ -512,28 +530,29 @@ class PID:
             self.output = 0.0
             return 0.0
 
-    def __call__(self, processValue: float, setpoint: float, currentTime: float = None) -> float:
+    def __call__(self, setpoint: float, processValue: float = None, currentTime: float = None) -> float:
         """
         call `compute`. Is a code simplification.
         
         Parameters
         ----------
-        processValue: float
-            The actual system feedback
-        
         setpoint: float
             The target value for the PID
 
+        processValue: float, default = None
+            The actual system feedback
+            Leave it to `None` when the simulation is used.
+
         currentTime: float, default = None
             The current time. For simulation purpose only.
-            Leave it to None for a real application.
+            Leave it to `None` for a real application.
         
         Returns
         -------
         float
             Return the PID output (same as `self.output`)
         """
-        return self.compute(processValue, setpoint, currentTime)
+        return self.compute(setpoint, processValue, currentTime)
 
 class ThreadedPID(PID, Thread):
     """
@@ -619,6 +638,9 @@ class ThreadedPID(PID, Thread):
     logger: logging.Logger or str, default = None
         Logging system. `logging.Logger` instance or logger name (str) can be passed.
         If it's anything else (None or other type), the PID will not send any log.
+
+    simulation: Simulation, default = None
+        Pass a simulation object to activate simulation.
     
     cycleTime: float, default = 0.0
         Define the minimum time between two PID calculations.
@@ -644,8 +666,8 @@ class ThreadedPID(PID, Thread):
     start()
         Used to start the thread.
     """
-    def __init__(self, kp: float, ki: float, kd: float, indirectAction: bool = False, proportionnalOnMeasurement: bool = False, integralLimit: float = None, derivativeOnMeasurment: bool = False, setpointRamp: float = None, setpointStableLimit: float = None, setpointStableTime: float = 1.0, deadband: float = None, deadbandActivationTime: float = 1.0, processValueStableLimit: float = None, processValueStableTime: float = 1.0, historianParams: HistorianParams = None, historianLenght: int = 100000, outputLimits: tuple[float, float] = (None, None), logger: logging.Logger = None, cycleTime: float = 0.0) -> None:
-        PID.__init__(self, kp, ki, kd, indirectAction, proportionnalOnMeasurement, integralLimit, derivativeOnMeasurment, setpointRamp, setpointStableLimit, setpointStableTime, deadband, deadbandActivationTime, processValueStableLimit, processValueStableTime, historianParams, historianLenght, outputLimits, logger)
+    def __init__(self, kp: float, ki: float, kd: float, indirectAction: bool = False, proportionnalOnMeasurement: bool = False, integralLimit: float = None, derivativeOnMeasurment: bool = False, setpointRamp: float = None, setpointStableLimit: float = None, setpointStableTime: float = 1.0, deadband: float = None, deadbandActivationTime: float = 1.0, processValueStableLimit: float = None, processValueStableTime: float = 1.0, historianParams: HistorianParams = None, historianLenght: int = 100000, outputLimits: tuple[float, float] = (None, None), logger: logging.Logger = None, simulation: Simulation = None, cycleTime: float = 0.0) -> None:
+        PID.__init__(self, kp, ki, kd, indirectAction, proportionnalOnMeasurement, integralLimit, derivativeOnMeasurment, setpointRamp, setpointStableLimit, setpointStableTime, deadband, deadbandActivationTime, processValueStableLimit, processValueStableTime, historianParams, historianLenght, outputLimits, logger, simulation)
         Thread.__init__(self)
 
         self.setpoint = 0.0
@@ -660,7 +682,7 @@ class ThreadedPID(PID, Thread):
         See `threading.Thread` documentation for more information.
         """
         # Call PID execution to initialize time memory
-        self.compute(self.processValue, self.setpoint)
+        self.compute(self.setpoint, self.processValue)
         self.quit = False
         return Thread.start(self)
     
@@ -673,4 +695,4 @@ class ThreadedPID(PID, Thread):
             while time.time() < (self._lastTime + self.cycleTime):
                 time.sleep(self.cycleTime / 100.0)
 
-            self.compute(self.processValue, self.setpoint)
+            self.compute(self.setpoint, self.processValue)
