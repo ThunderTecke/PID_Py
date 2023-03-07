@@ -2,8 +2,8 @@ import sys
 
 from PySide6 import QtGui
 from PySide6.QtGui import QPainter
-from PySide6.QtWidgets import QApplication, QMainWindow, QWidget
-from PySide6.QtWidgets import QVBoxLayout, QHBoxLayout
+from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QDoubleSpinBox
+from PySide6.QtWidgets import QVBoxLayout, QHBoxLayout, QFormLayout
 from PySide6.QtCharts import QChart, QChartView, QLineSeries, QValueAxis    
 from PySide6.QtCore import QTimer, Qt
 
@@ -14,9 +14,10 @@ class SetupToolApp(QMainWindow):
         super().__init__()
         
         self.setWindowTitle("PID_Py : SetupTool")
-        self.setFixedSize(1000, 600)
+        self.setMinimumSize(1000, 600)
 
         # ===== Real-time graph ====
+        # TODO: Store data in a list of QPointF, and use replace to update points in the chart
         self.xAxis = QValueAxis()
         self.xAxis.setTitleText("Time (s)")
         self.xAxis.setRange(0, 2*np.pi)
@@ -43,11 +44,36 @@ class SetupToolApp(QMainWindow):
         self.chartView = QChartView(self.chart)
         self.chartView.setRenderHint(QPainter.RenderHint.Antialiasing)
 
+        # ===== Parameters =====
+        self.parametersWidget = QWidget()
+        self.parametersLayout = QFormLayout(self.parametersWidget)
+
+        # Kp, ki and kd
+        self.kpSpinBox = QDoubleSpinBox()
+        self.kpSpinBox.setEnabled(False)
+        self.kpSpinBox.setSingleStep(0.1)
+        self.kpSpinBox.setDecimals(2)
+        self.kpSpinBox.setMinimum(0.0)
+        self.kpSpinBox.setToolTip("Proportionnal gain")
+        self.kpSpinBox.setToolTipDuration(5000)
+
+        self.kiSpinBox = QDoubleSpinBox()
+        self.kiSpinBox.setEnabled(False)
+
+        self.kdSpinBox = QDoubleSpinBox()
+        self.kdSpinBox.setEnabled(False)
+
+        self.parametersLayout.addRow("Kp", self.kpSpinBox)
+        self.parametersLayout.addRow("Ki", self.kiSpinBox)
+        self.parametersLayout.addRow("Kd", self.kdSpinBox)
+
+
         # ===== Central widget =====
         centralWidget = QWidget()
-        centralLayout = QVBoxLayout(centralWidget)
+        centralLayout = QHBoxLayout(centralWidget)
 
         centralLayout.addWidget(self.chartView)
+        centralLayout.addWidget(self.parametersWidget)
 
         self.setCentralWidget(centralWidget)
 
