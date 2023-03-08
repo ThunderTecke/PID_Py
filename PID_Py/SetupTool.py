@@ -2,7 +2,7 @@ import sys
 
 from PySide6 import QtGui
 from PySide6.QtGui import QPainter
-from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QDoubleSpinBox
+from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QDoubleSpinBox, QLabel, QFrame, QCheckBox, QTimeEdit
 from PySide6.QtWidgets import QVBoxLayout, QHBoxLayout, QFormLayout
 from PySide6.QtCharts import QChart, QChartView, QLineSeries, QValueAxis    
 from PySide6.QtCore import QTimer, Qt
@@ -48,24 +48,78 @@ class SetupToolApp(QMainWindow):
         self.parametersWidget = QWidget()
         self.parametersLayout = QFormLayout(self.parametersWidget)
 
-        # Kp, ki and kd
+        # Gains (Kp, ki and kd)
         self.kpSpinBox = QDoubleSpinBox()
         self.kpSpinBox.setEnabled(False)
         self.kpSpinBox.setSingleStep(0.1)
-        self.kpSpinBox.setDecimals(2)
+        self.kpSpinBox.setDecimals(3)
         self.kpSpinBox.setMinimum(0.0)
         self.kpSpinBox.setToolTip("Proportionnal gain")
         self.kpSpinBox.setToolTipDuration(5000)
 
         self.kiSpinBox = QDoubleSpinBox()
         self.kiSpinBox.setEnabled(False)
+        self.kiSpinBox.setSingleStep(0.1)
+        self.kiSpinBox.setDecimals(3)
+        self.kiSpinBox.setMinimum(0.0)
+        self.kiSpinBox.setToolTip("Integral gain")
+        self.kiSpinBox.setToolTipDuration(5000)
 
         self.kdSpinBox = QDoubleSpinBox()
         self.kdSpinBox.setEnabled(False)
+        self.kdSpinBox.setSingleStep(0.1)
+        self.kdSpinBox.setDecimals(3)
+        self.kdSpinBox.setMinimum(0.0)
+        self.kdSpinBox.setToolTip("Derivative gain")
+        self.kdSpinBox.setToolTipDuration(5000)
 
+        gainLabel = QLabel("Gains")
+        gainLabel.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        gainLabel.setStyleSheet("font-size: 24px")
+        self.parametersLayout.addRow(gainLabel)
         self.parametersLayout.addRow("Kp", self.kpSpinBox)
         self.parametersLayout.addRow("Ki", self.kiSpinBox)
         self.parametersLayout.addRow("Kd", self.kdSpinBox)
+        
+        separator = QFrame()
+        separator.setFrameShape(QFrame.Shape.HLine)
+        separator.setFrameShadow(QFrame.Shadow.Raised)
+        self.parametersLayout.addRow(separator)
+
+        # Parameters
+        self.indirectActionCheckBox = QCheckBox()
+
+        self.proportionnalOnMeasurementCheckBox = QCheckBox()
+
+        self.integralLimitSpinBox = QDoubleSpinBox()
+
+        self.derivativeOnMeasurement = QCheckBox()
+
+        self.setpointRampEnableCheckBox = QCheckBox()
+        self.setpointRampSpinBox = QDoubleSpinBox()
+
+        self.setpointStableLimitEnableCheckBox = QCheckBox()
+        self.setpointStableLimitSpinBox = QCheckBox()
+        self.setpointStableTimeTimeEdit = QTimeEdit()
+
+        self.deadbandEnableCheckBox = QCheckBox()
+        self.deadbandSpinBox = QDoubleSpinBox()
+        self.deadbandActivationTimeTimeEdit = QTimeEdit()
+
+        self.processValueStableLimitEnableCheckBox = QCheckBox()
+        self.processValueStableLimitSpinBox = QDoubleSpinBox()
+        self.processValueStableTimeTimeEdit = QTimeEdit()
+
+        self.outputLimitMaxEnableCheckBox = QCheckBox()
+        self.outputLimitMaxSpinBox = QDoubleSpinBox()
+
+        self.outputLimitMinEnableCheckBox = QCheckBox()
+        self.outputLimitMinSpinBox = QDoubleSpinBox()
+
+        parametersLabel = QLabel("Parameters")
+        parametersLabel.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        parametersLabel.setStyleSheet("font-size: 24px")
+        self.parametersLayout.addRow(parametersLabel)
 
 
         # ===== Central widget =====
