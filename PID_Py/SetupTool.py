@@ -87,39 +87,58 @@ class SetupToolApp(QMainWindow):
         self.parametersLayout.addRow(separator)
 
         # Parameters
-        self.indirectActionCheckBox = QCheckBox()
+        self.indirectActionCheckBox = QCheckBox("Indirect action")
 
-        self.proportionnalOnMeasurementCheckBox = QCheckBox()
+        self.proportionnalOnMeasurementCheckBox = QCheckBox("Proportionnal on measurement")
 
+        self.integralLimitEnableCheckBox = QCheckBox("Integral limit")
         self.integralLimitSpinBox = QDoubleSpinBox()
 
-        self.derivativeOnMeasurement = QCheckBox()
+        self.derivativeOnMeasurementCheckBox = QCheckBox("Derivative on measurement")
 
-        self.setpointRampEnableCheckBox = QCheckBox()
+        self.setpointRampEnableCheckBox = QCheckBox("Setpoint ramp")
         self.setpointRampSpinBox = QDoubleSpinBox()
 
-        self.setpointStableLimitEnableCheckBox = QCheckBox()
-        self.setpointStableLimitSpinBox = QCheckBox()
+        self.setpointStableLimitEnableCheckBox = QCheckBox("Setpoint stable")
+        self.setpointStableLimitSpinBox = QDoubleSpinBox()
         self.setpointStableTimeTimeEdit = QTimeEdit()
 
-        self.deadbandEnableCheckBox = QCheckBox()
+        self.deadbandEnableCheckBox = QCheckBox("Deadband")
         self.deadbandSpinBox = QDoubleSpinBox()
         self.deadbandActivationTimeTimeEdit = QTimeEdit()
 
-        self.processValueStableLimitEnableCheckBox = QCheckBox()
+        self.processValueStableLimitEnableCheckBox = QCheckBox("Process value stable")
         self.processValueStableLimitSpinBox = QDoubleSpinBox()
         self.processValueStableTimeTimeEdit = QTimeEdit()
 
-        self.outputLimitMaxEnableCheckBox = QCheckBox()
+        self.outputLimitMaxEnableCheckBox = QCheckBox("Maximum")
         self.outputLimitMaxSpinBox = QDoubleSpinBox()
 
-        self.outputLimitMinEnableCheckBox = QCheckBox()
+        self.outputLimitMinEnableCheckBox = QCheckBox("Minimum")
         self.outputLimitMinSpinBox = QDoubleSpinBox()
 
         parametersLabel = QLabel("Parameters")
         parametersLabel.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         parametersLabel.setStyleSheet("font-size: 24px")
         self.parametersLayout.addRow(parametersLabel)
+        self.parametersLayout.addRow(self.indirectActionCheckBox)
+        self.parametersLayout.addRow(self.proportionnalOnMeasurementCheckBox)
+        self.parametersLayout.addRow(self.integralLimitEnableCheckBox, self.integralLimitSpinBox)
+        self.parametersLayout.addRow(self.derivativeOnMeasurementCheckBox)
+        self.parametersLayout.addRow(self.setpointRampEnableCheckBox, self.setpointRampSpinBox)
+        self.parametersLayout.addRow(self.setpointStableLimitEnableCheckBox, self.setpointStableLimitSpinBox)
+        self.parametersLayout.addRow("      Setpoint stable time", self.setpointStableTimeTimeEdit)
+        self.parametersLayout.addRow(self.deadbandEnableCheckBox, self.deadbandSpinBox)
+        self.parametersLayout.addRow("      Deadband activatio time", self.deadbandActivationTimeTimeEdit)
+        self.parametersLayout.addRow(self.processValueStableLimitEnableCheckBox, self.processValueStableLimitSpinBox)
+        self.parametersLayout.addRow("      Process value stable time", self.processValueStableTimeTimeEdit)
+
+        outputLimitLabel = QLabel("Output limits")
+        outputLimitLabel.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        outputLimitLabel.setStyleSheet("font-size: 24px")
+        self.parametersLayout.addRow(outputLimitLabel)
+        self.parametersLayout.addRow(self.outputLimitMaxEnableCheckBox, self.outputLimitMaxSpinBox)
+        self.parametersLayout.addRow(self.outputLimitMinEnableCheckBox, self.outputLimitMinSpinBox)
 
 
         # ===== Central widget =====
