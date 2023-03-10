@@ -2,8 +2,8 @@ import sys
 
 from PySide6 import QtGui
 from PySide6.QtGui import QPainter
-from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QDoubleSpinBox, QLabel, QFrame, QCheckBox, QTimeEdit
-from PySide6.QtWidgets import QVBoxLayout, QHBoxLayout, QFormLayout
+from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QDoubleSpinBox, QLabel, QFrame, QCheckBox, QTimeEdit, QScrollArea
+from PySide6.QtWidgets import QVBoxLayout, QHBoxLayout, QGridLayout
 from PySide6.QtCharts import QChart, QChartView, QLineSeries, QValueAxis    
 from PySide6.QtCore import QTimer, Qt
 
@@ -14,7 +14,7 @@ class SetupToolApp(QMainWindow):
         super().__init__()
         
         self.setWindowTitle("PID_Py : SetupTool")
-        self.setMinimumSize(1000, 600)
+        self.setMinimumSize(1000, 300)
 
         # ===== Real-time graph ====
         # TODO: Store data in a list of QPointF, and use replace to update points in the chart
@@ -45,8 +45,16 @@ class SetupToolApp(QMainWindow):
         self.chartView.setRenderHint(QPainter.RenderHint.Antialiasing)
 
         # ===== Parameters =====
-        self.parametersWidget = QWidget()
-        self.parametersLayout = QFormLayout(self.parametersWidget)
+        self.parametersWidget = QScrollArea()
+        self.parametersWidget.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
+        self.parametersWidget.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.parametersWidget.setMinimumWidth(340)
+
+        self.parametersLayout = QGridLayout(self.parametersWidget)
+        self.parametersLayout.setColumnStretch(0, 0)
+        self.parametersLayout.setColumnMinimumWidth(0, 13)
+        self.parametersLayout.setColumnStretch(1, 3)
+        self.parametersLayout.setColumnStretch(2, 1)
 
         # Gains (Kp, ki and kd)
         self.kpSpinBox = QDoubleSpinBox()
@@ -76,15 +84,23 @@ class SetupToolApp(QMainWindow):
         gainLabel = QLabel("Gains")
         gainLabel.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         gainLabel.setStyleSheet("font-size: 24px")
-        self.parametersLayout.addRow(gainLabel)
-        self.parametersLayout.addRow("Kp", self.kpSpinBox)
-        self.parametersLayout.addRow("Ki", self.kiSpinBox)
-        self.parametersLayout.addRow("Kd", self.kdSpinBox)
+
+        self.parametersLayout.addWidget(gainLabel, 0, 0, 1, 3)
+
+        self.parametersLayout.addWidget(QLabel("Proportionnal"), 1, 1)
+        self.parametersLayout.addWidget(self.kpSpinBox, 1, 2)
+
+        self.parametersLayout.addWidget(QLabel("Integral"), 2, 1)
+        self.parametersLayout.addWidget(self.kiSpinBox, 2, 2)
+
+        self.parametersLayout.addWidget(QLabel("Derivative"), 3, 1)
+        self.parametersLayout.addWidget(self.kdSpinBox, 3, 2)
         
-        separator = QFrame()
-        separator.setFrameShape(QFrame.Shape.HLine)
-        separator.setFrameShadow(QFrame.Shadow.Raised)
-        self.parametersLayout.addRow(separator)
+        separator1 = QFrame()
+        separator1.setFrameShape(QFrame.Shape.HLine)
+        separator1.setFrameShadow(QFrame.Shadow.Raised)
+
+        self.parametersLayout.addWidget(separator1, 4, 0, 1, 3)
 
         # Parameters
         self.indirectActionCheckBox = QCheckBox("Indirect action")
@@ -120,26 +136,56 @@ class SetupToolApp(QMainWindow):
         parametersLabel = QLabel("Parameters")
         parametersLabel.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         parametersLabel.setStyleSheet("font-size: 24px")
-        self.parametersLayout.addRow(parametersLabel)
-        self.parametersLayout.addRow(self.indirectActionCheckBox)
-        self.parametersLayout.addRow(self.proportionnalOnMeasurementCheckBox)
-        self.parametersLayout.addRow(self.integralLimitEnableCheckBox, self.integralLimitSpinBox)
-        self.parametersLayout.addRow(self.derivativeOnMeasurementCheckBox)
-        self.parametersLayout.addRow(self.setpointRampEnableCheckBox, self.setpointRampSpinBox)
-        self.parametersLayout.addRow(self.setpointStableLimitEnableCheckBox, self.setpointStableLimitSpinBox)
-        self.parametersLayout.addRow("      Setpoint stable time", self.setpointStableTimeTimeEdit)
-        self.parametersLayout.addRow(self.deadbandEnableCheckBox, self.deadbandSpinBox)
-        self.parametersLayout.addRow("      Deadband activatio time", self.deadbandActivationTimeTimeEdit)
-        self.parametersLayout.addRow(self.processValueStableLimitEnableCheckBox, self.processValueStableLimitSpinBox)
-        self.parametersLayout.addRow("      Process value stable time", self.processValueStableTimeTimeEdit)
+
+        self.parametersLayout.addWidget(parametersLabel, 5, 0, 1 ,3)
+
+        self.parametersLayout.addWidget(self.indirectActionCheckBox, 6, 0, 1, 2)
+
+        self.parametersLayout.addWidget(self.proportionnalOnMeasurementCheckBox, 7, 0, 1, 2)
+
+        self.parametersLayout.addWidget(self.integralLimitEnableCheckBox, 8, 0, 1, 2)
+        self.parametersLayout.addWidget(self.integralLimitSpinBox, 8, 2)
+
+        self.parametersLayout.addWidget(self.derivativeOnMeasurementCheckBox, 9, 0, 1, 2)
+
+        self.parametersLayout.addWidget(self.setpointRampEnableCheckBox, 10, 0, 1, 2)
+        self.parametersLayout.addWidget(self.setpointRampSpinBox, 10, 2)
+
+        self.parametersLayout.addWidget(self.setpointStableLimitEnableCheckBox, 11, 0, 1, 2)
+        self.parametersLayout.addWidget(self.setpointStableLimitSpinBox, 11, 2)
+        self.parametersLayout.addWidget(QLabel("Setpoint stable time"), 12, 1)
+        self.parametersLayout.addWidget(self.setpointStableTimeTimeEdit, 12, 2)
+
+        self.parametersLayout.addWidget(self.deadbandEnableCheckBox, 13, 0, 1, 2)
+        self.parametersLayout.addWidget(self.deadbandSpinBox, 13, 2)
+        self.parametersLayout.addWidget(QLabel("Deadband activation time"), 14, 1)
+        self.parametersLayout.addWidget(self.deadbandActivationTimeTimeEdit, 14, 2)
+
+        self.parametersLayout.addWidget(self.processValueStableLimitEnableCheckBox, 15, 0, 1, 2)
+        self.parametersLayout.addWidget(self.processValueStableLimitSpinBox, 15, 2)
+        self.parametersLayout.addWidget(QLabel("Process value stable time"), 16, 1)
+        self.parametersLayout.addWidget(self.processValueStableTimeTimeEdit, 16, 2)
+
+        # Output limits
+        separator2 = QFrame()
+        separator2.setFrameShape(QFrame.Shape.HLine)
+        separator2.setFrameShadow(QFrame.Shadow.Raised)
+
+        self.parametersLayout.addWidget(separator2, 17, 0, 1, 3)
 
         outputLimitLabel = QLabel("Output limits")
         outputLimitLabel.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         outputLimitLabel.setStyleSheet("font-size: 24px")
-        self.parametersLayout.addRow(outputLimitLabel)
-        self.parametersLayout.addRow(self.outputLimitMaxEnableCheckBox, self.outputLimitMaxSpinBox)
-        self.parametersLayout.addRow(self.outputLimitMinEnableCheckBox, self.outputLimitMinSpinBox)
 
+        self.parametersLayout.addWidget(outputLimitLabel, 18, 0, 1, 3)
+
+        self.parametersLayout.addWidget(self.outputLimitMaxEnableCheckBox, 19, 0, 1, 2)
+        self.parametersLayout.addWidget(self.outputLimitMaxSpinBox, 19, 2)
+
+        self.parametersLayout.addWidget(self.outputLimitMinEnableCheckBox, 20, 0, 1, 2)
+        self.parametersLayout.addWidget(self.outputLimitMinSpinBox, 20, 2)
+
+        self.parametersLayout.setRowStretch(21, 1)
 
         # ===== Central widget =====
         centralWidget = QWidget()
@@ -147,6 +193,8 @@ class SetupToolApp(QMainWindow):
 
         centralLayout.addWidget(self.chartView)
         centralLayout.addWidget(self.parametersWidget)
+        centralLayout.setStretch(0, 3)
+        centralLayout.setStretch(1, 1)
 
         self.setCentralWidget(centralWidget)
 
