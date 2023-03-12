@@ -1,9 +1,9 @@
 import sys
 
 from PySide6 import QtGui
-from PySide6.QtGui import QPainter
-from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QDoubleSpinBox, QLabel, QFrame, QCheckBox, QTimeEdit, QScrollArea
-from PySide6.QtWidgets import QVBoxLayout, QHBoxLayout, QGridLayout
+from PySide6.QtGui import QPainter, QActionGroup
+from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QDoubleSpinBox, QLabel, QFrame, QCheckBox, QTimeEdit, QScrollArea, QMenuBar, QMenu
+from PySide6.QtWidgets import QHBoxLayout, QGridLayout
 from PySide6.QtCharts import QChart, QChartView, QLineSeries, QValueAxis    
 from PySide6.QtCore import QTimer, Qt
 
@@ -15,6 +15,25 @@ class SetupToolApp(QMainWindow):
         
         self.setWindowTitle("PID_Py : SetupTool")
         self.setMinimumSize(1000, 300)
+
+        # ===== Menu bar =====
+        self.setMenuBar(QMenuBar())
+
+        menuReadWrite = QMenu("Read/Write")
+
+        readWriteGroup = QActionGroup(self)
+        readWriteGroup.setExclusive(True)
+        readAction = readWriteGroup.addAction("Read")
+        readAction.setCheckable(True)
+        readAction.setChecked(True)
+
+        writeAction = readWriteGroup.addAction("Write")
+        writeAction.setCheckable(True)
+
+        menuReadWrite.addAction(readAction)
+        menuReadWrite.addAction(writeAction)
+
+        self.menuBar().addMenu(menuReadWrite)
 
         # ===== Real-time graph ====
         # TODO: Store data in a list of QPointF, and use replace to update points in the chart
@@ -45,10 +64,12 @@ class SetupToolApp(QMainWindow):
         self.chartView.setRenderHint(QPainter.RenderHint.Antialiasing)
 
         # ===== Parameters =====
-        self.parametersWidget = QScrollArea()
-        self.parametersWidget.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
-        self.parametersWidget.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.parametersWidget.setMinimumWidth(340)
+        self.parametersScrollArea = QScrollArea()
+        self.parametersScrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.parametersScrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.parametersScrollArea.setMinimumWidth(350)
+
+        self.parametersWidget = QWidget()
 
         self.parametersLayout = QGridLayout(self.parametersWidget)
         self.parametersLayout.setColumnStretch(0, 0)
@@ -64,6 +85,8 @@ class SetupToolApp(QMainWindow):
         self.kpSpinBox.setMinimum(0.0)
         self.kpSpinBox.setToolTip("Proportionnal gain")
         self.kpSpinBox.setToolTipDuration(5000)
+        self.kpLabel = QLabel("Proportionnal")
+        self.kpLabel.setEnabled(False)
 
         self.kiSpinBox = QDoubleSpinBox()
         self.kiSpinBox.setEnabled(False)
@@ -72,6 +95,8 @@ class SetupToolApp(QMainWindow):
         self.kiSpinBox.setMinimum(0.0)
         self.kiSpinBox.setToolTip("Integral gain")
         self.kiSpinBox.setToolTipDuration(5000)
+        self.kiLabel = QLabel("Integral")
+        self.kiLabel.setEnabled(False)
 
         self.kdSpinBox = QDoubleSpinBox()
         self.kdSpinBox.setEnabled(False)
@@ -80,6 +105,8 @@ class SetupToolApp(QMainWindow):
         self.kdSpinBox.setMinimum(0.0)
         self.kdSpinBox.setToolTip("Derivative gain")
         self.kdSpinBox.setToolTipDuration(5000)
+        self.kdLabel = QLabel("Derivative")
+        self.kdLabel.setEnabled(False)
 
         gainLabel = QLabel("Gains")
         gainLabel.setAlignment(Qt.AlignmentFlag.AlignHCenter)
@@ -87,13 +114,13 @@ class SetupToolApp(QMainWindow):
 
         self.parametersLayout.addWidget(gainLabel, 0, 0, 1, 3)
 
-        self.parametersLayout.addWidget(QLabel("Proportionnal"), 1, 1)
+        self.parametersLayout.addWidget(self.kpLabel, 1, 1)
         self.parametersLayout.addWidget(self.kpSpinBox, 1, 2)
 
-        self.parametersLayout.addWidget(QLabel("Integral"), 2, 1)
+        self.parametersLayout.addWidget(self.kiLabel, 2, 1)
         self.parametersLayout.addWidget(self.kiSpinBox, 2, 2)
 
-        self.parametersLayout.addWidget(QLabel("Derivative"), 3, 1)
+        self.parametersLayout.addWidget(self.kdLabel, 3, 1)
         self.parametersLayout.addWidget(self.kdSpinBox, 3, 2)
         
         separator1 = QFrame()
@@ -104,34 +131,115 @@ class SetupToolApp(QMainWindow):
 
         # Parameters
         self.indirectActionCheckBox = QCheckBox("Indirect action")
+        self.indirectActionCheckBox.setEnabled(False)
+        self.indirectActionCheckBox.setToolTip("Invert PID action")
+        self.indirectActionCheckBox.setToolTipDuration(5000)
 
         self.proportionnalOnMeasurementCheckBox = QCheckBox("Proportionnal on measurement")
+        self.proportionnalOnMeasurementCheckBox.setEnabled(False)
+        self.proportionnalOnMeasurementCheckBox.setToolTip("Calculate the proportionnal term on the process value")
+        self.proportionnalOnMeasurementCheckBox.setToolTipDuration(5000)
 
         self.integralLimitEnableCheckBox = QCheckBox("Integral limit")
+        self.integralLimitEnableCheckBox.setEnabled(False)
+        self.integralLimitEnableCheckBox.setToolTip("Clamp integral term between [-value, value]")
+        self.integralLimitEnableCheckBox.setToolTipDuration(5000)
         self.integralLimitSpinBox = QDoubleSpinBox()
+        self.integralLimitSpinBox.setEnabled(False)
+        self.integralLimitSpinBox.setToolTip("Clamp integral term between [-value, value]")
+        self.integralLimitSpinBox.setToolTipDuration(5000)
 
         self.derivativeOnMeasurementCheckBox = QCheckBox("Derivative on measurement")
+        self.derivativeOnMeasurementCheckBox.setEnabled(False)
+        self.derivativeOnMeasurementCheckBox.setToolTip("Calculate the derivative term on the process value")
+        self.derivativeOnMeasurementCheckBox.setToolTipDuration(5000)
 
         self.setpointRampEnableCheckBox = QCheckBox("Setpoint ramp")
+        self.setpointRampEnableCheckBox.setEnabled(False)
+        self.setpointRampEnableCheckBox.setToolTip("Apply a ramp on the setpoint (unit/s)")
+        self.setpointRampEnableCheckBox.setToolTipDuration(5000)
         self.setpointRampSpinBox = QDoubleSpinBox()
+        self.setpointRampSpinBox.setEnabled(False)
+        self.setpointRampSpinBox.setToolTip("Apply a ramp on the setpoint (unit/s)")
+        self.setpointRampSpinBox.setToolTipDuration(5000)
 
         self.setpointStableLimitEnableCheckBox = QCheckBox("Setpoint stable")
+        self.setpointStableLimitEnableCheckBox.setEnabled(False)
+        self.setpointStableLimitEnableCheckBox.setToolTip("Maximum difference between the setpoint and the process value to be considered reached")
+        self.setpointStableLimitEnableCheckBox.setToolTipDuration(5000)
         self.setpointStableLimitSpinBox = QDoubleSpinBox()
+        self.setpointStableLimitSpinBox.setEnabled(False)
+        self.setpointStableLimitSpinBox.setToolTip("Maximum difference between the setpoint and the process value to be considered reached")
+        self.setpointStableLimitSpinBox.setToolTipDuration(5000)
+
+        self.setpointStableTimeLabel = QLabel("Setpoint stable time")
+        self.setpointStableTimeLabel.setEnabled(False)
+        self.setpointStableTimeLabel.setToolTip("Maximum difference between the setpoint and the process value to be considered reached")
+        self.setpointStableTimeLabel.setToolTipDuration(5000)
         self.setpointStableTimeTimeEdit = QTimeEdit()
+        self.setpointStableTimeTimeEdit.setEnabled(False)
+        self.setpointStableTimeTimeEdit.setToolTip("Maximum difference between the setpoint and the process value to be considered reached")
+        self.setpointStableTimeTimeEdit.setToolTipDuration(5000)
+        self.setpointStableTimeTimeEdit.setDisplayFormat("hh:mm:ss")
+        self.setpointStableTimeTimeEdit.setButtonSymbols(QTimeEdit.ButtonSymbols.NoButtons)
 
         self.deadbandEnableCheckBox = QCheckBox("Deadband")
+        self.deadbandEnableCheckBox.setEnabled(False)
+        self.deadbandEnableCheckBox.setToolTip("The minimum amount of output variation to applied this variation")
+        self.deadbandEnableCheckBox.setToolTipDuration(5000)
         self.deadbandSpinBox = QDoubleSpinBox()
+        self.deadbandSpinBox.setEnabled(False)
+        self.deadbandSpinBox.setToolTip("The minimum amount of output variation to applied this variation")
+        self.deadbandSpinBox.setToolTipDuration(5000)
+
+        self.deadbandActivationTimeLabel = QLabel("Deadband activation time")
+        self.deadbandActivationTimeLabel.setEnabled(False)
+        self.deadbandActivationTimeLabel.setToolTip("The minimum amount of output variation to applied this variation")
+        self.deadbandActivationTimeLabel.setToolTipDuration(5000)
         self.deadbandActivationTimeTimeEdit = QTimeEdit()
+        self.deadbandActivationTimeTimeEdit.setEnabled(False)
+        self.deadbandActivationTimeTimeEdit.setToolTip("The minimum amount of output variation to applied this variation")
+        self.deadbandActivationTimeTimeEdit.setToolTipDuration(5000)
+        self.deadbandActivationTimeTimeEdit.setDisplayFormat("hh:mm:ss")
+        self.deadbandActivationTimeTimeEdit.setButtonSymbols(QTimeEdit.ButtonSymbols.NoButtons)
 
         self.processValueStableLimitEnableCheckBox = QCheckBox("Process value stable")
+        self.processValueStableLimitEnableCheckBox.setEnabled(False)
+        self.processValueStableLimitEnableCheckBox.setToolTip("The maximum variation of the process value to be considered stable")
+        self.processValueStableLimitEnableCheckBox.setToolTipDuration(5000)
         self.processValueStableLimitSpinBox = QDoubleSpinBox()
+        self.processValueStableLimitSpinBox.setEnabled(False)
+        self.processValueStableLimitSpinBox.setToolTip("The maximum variation of the process value to be considered stable")
+        self.processValueStableLimitSpinBox.setToolTipDuration(5000)
+
+        self.processValueStableTimeLabel = QLabel("Process value stable time")
+        self.processValueStableTimeLabel.setEnabled(False)
+        self.processValueStableTimeLabel.setToolTip("The maximum variation of the process value to be considered stable")
+        self.processValueStableTimeLabel.setToolTipDuration(5000)
         self.processValueStableTimeTimeEdit = QTimeEdit()
+        self.processValueStableTimeTimeEdit.setEnabled(False)
+        self.processValueStableTimeTimeEdit.setToolTip("The maximum variation of the process value to be considered stable")
+        self.processValueStableTimeTimeEdit.setToolTipDuration(5000)
+        self.processValueStableTimeTimeEdit.setDisplayFormat("hh:mm:ss")
+        self.processValueStableTimeTimeEdit.setButtonSymbols(QTimeEdit.ButtonSymbols.NoButtons)
 
         self.outputLimitMaxEnableCheckBox = QCheckBox("Maximum")
+        self.outputLimitMaxEnableCheckBox.setEnabled(False)
+        self.outputLimitMaxEnableCheckBox.setToolTip("Maximum output")
+        self.outputLimitMaxEnableCheckBox.setToolTipDuration(5000)
         self.outputLimitMaxSpinBox = QDoubleSpinBox()
+        self.outputLimitMaxSpinBox.setEnabled(False)
+        self.outputLimitMaxSpinBox.setToolTip("Maximum output")
+        self.outputLimitMaxSpinBox.setToolTipDuration(5000)
 
         self.outputLimitMinEnableCheckBox = QCheckBox("Minimum")
+        self.outputLimitMinEnableCheckBox.setEnabled(False)
+        self.outputLimitMinEnableCheckBox.setToolTip("Minimum output")
+        self.outputLimitMinEnableCheckBox.setToolTipDuration(5000)
         self.outputLimitMinSpinBox = QDoubleSpinBox()
+        self.outputLimitMinSpinBox.setEnabled(False)
+        self.outputLimitMinSpinBox.setToolTip("Minimum output")
+        self.outputLimitMinSpinBox.setToolTipDuration(5000)
 
         parametersLabel = QLabel("Parameters")
         parametersLabel.setAlignment(Qt.AlignmentFlag.AlignHCenter)
@@ -153,17 +261,17 @@ class SetupToolApp(QMainWindow):
 
         self.parametersLayout.addWidget(self.setpointStableLimitEnableCheckBox, 11, 0, 1, 2)
         self.parametersLayout.addWidget(self.setpointStableLimitSpinBox, 11, 2)
-        self.parametersLayout.addWidget(QLabel("Setpoint stable time"), 12, 1)
+        self.parametersLayout.addWidget(self.setpointStableTimeLabel, 12, 1)
         self.parametersLayout.addWidget(self.setpointStableTimeTimeEdit, 12, 2)
 
         self.parametersLayout.addWidget(self.deadbandEnableCheckBox, 13, 0, 1, 2)
         self.parametersLayout.addWidget(self.deadbandSpinBox, 13, 2)
-        self.parametersLayout.addWidget(QLabel("Deadband activation time"), 14, 1)
+        self.parametersLayout.addWidget(self.deadbandActivationTimeLabel, 14, 1)
         self.parametersLayout.addWidget(self.deadbandActivationTimeTimeEdit, 14, 2)
 
         self.parametersLayout.addWidget(self.processValueStableLimitEnableCheckBox, 15, 0, 1, 2)
         self.parametersLayout.addWidget(self.processValueStableLimitSpinBox, 15, 2)
-        self.parametersLayout.addWidget(QLabel("Process value stable time"), 16, 1)
+        self.parametersLayout.addWidget(self.processValueStableTimeLabel, 16, 1)
         self.parametersLayout.addWidget(self.processValueStableTimeTimeEdit, 16, 2)
 
         # Output limits
@@ -185,14 +293,15 @@ class SetupToolApp(QMainWindow):
         self.parametersLayout.addWidget(self.outputLimitMinEnableCheckBox, 20, 0, 1, 2)
         self.parametersLayout.addWidget(self.outputLimitMinSpinBox, 20, 2)
 
-        self.parametersLayout.setRowStretch(21, 1)
-
         # ===== Central widget =====
         centralWidget = QWidget()
         centralLayout = QHBoxLayout(centralWidget)
 
         centralLayout.addWidget(self.chartView)
-        centralLayout.addWidget(self.parametersWidget)
+
+        self.parametersScrollArea.setWidget(self.parametersWidget)
+        centralLayout.addWidget(self.parametersScrollArea)
+
         centralLayout.setStretch(0, 3)
         centralLayout.setStretch(1, 1)
 
@@ -200,7 +309,7 @@ class SetupToolApp(QMainWindow):
 
         # ===== Refreshing timer =====
         self.refreshTimer = QTimer(self)
-        self.refreshTimer.timeout.connect(self.refreshData)
+        self.refreshTimer.timeout.connect(self.refreshData) # type: ignore
         self.refreshTimer.start(25)
     
     def refreshData(self):
