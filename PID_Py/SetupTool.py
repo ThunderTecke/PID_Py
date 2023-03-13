@@ -16,13 +16,14 @@ class SetupToolApp(QMainWindow):
         super().__init__()
 
         self.logger = logging.getLogger(__name__)
-        handler = logging.StreamHandler()
-        handler.setLevel(logging.INFO)
-
-        logFormat = logging.Formatter('%(levelname)s [%(name)s]: %(message)s')
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setLevel(logging.DEBUG)
+        logFormat = logging.Formatter('%(name)s [%(levelname)s]: %(message)s')
         handler.setFormatter(logFormat)
-
+        self.logger.setLevel(logging.DEBUG)
         self.logger.addHandler(handler)
+
+        self.logger.debug("Logger initialized")
         
         self.setWindowTitle("PID_Py : SetupTool")
         self.setMinimumSize(1000, 300)
@@ -117,6 +118,8 @@ class SetupToolApp(QMainWindow):
         self.kiLabel = QLabel("Integral")
         self.kiLabel.setEnabled(False)
 
+        self.kiSpinBox.valueChanged.connect(self.kiChanged)
+
         self.kdSpinBox = QDoubleSpinBox()
         self.kdSpinBox.setEnabled(False)
         self.kdSpinBox.setSingleStep(0.1)
@@ -126,6 +129,8 @@ class SetupToolApp(QMainWindow):
         self.kdSpinBox.setToolTipDuration(5000)
         self.kdLabel = QLabel("Derivative")
         self.kdLabel.setEnabled(False)
+
+        self.kdSpinBox.valueChanged.connect(self.kdChanged)
 
         gainLabel = QLabel("Gains")
         gainLabel.setAlignment(Qt.AlignmentFlag.AlignHCenter)
@@ -153,6 +158,8 @@ class SetupToolApp(QMainWindow):
         self.indirectActionCheckBox.setEnabled(False)
         self.indirectActionCheckBox.setToolTip("Invert PID action")
         self.indirectActionCheckBox.setToolTipDuration(5000)
+
+        self.indirectActionCheckBox.stateChanged.connect(self.indirectActionChanged)
 
         self.proportionnalOnMeasurementCheckBox = QCheckBox("Proportionnal on measurement")
         self.proportionnalOnMeasurementCheckBox.setEnabled(False)
@@ -330,6 +337,8 @@ class SetupToolApp(QMainWindow):
         self.refreshTimer = QTimer(self)
         self.refreshTimer.timeout.connect(self.refreshData)
         self.refreshTimer.start(25)
+
+        self.logger.debug("SetupTool initialized")
     
     def refreshData(self):
         if (self.alpha < 2*np.pi):
@@ -386,6 +395,8 @@ class SetupToolApp(QMainWindow):
         self.outputLimitMinEnableCheckBox.setEnabled(True)
         self.outputLimitMinSpinBox.setEnabled(self.outputLimitMinEnableCheckBox.checkState() == Qt.CheckState.Checked)
 
+        self.logger.debug("Widgets parameters enabled")
+
     def disableWidgets(self):
         self.kpLabel.setEnabled(False)
         self.kpSpinBox.setEnabled(False)
@@ -427,24 +438,38 @@ class SetupToolApp(QMainWindow):
         self.outputLimitMaxSpinBox.setEnabled(False)
         self.outputLimitMinEnableCheckBox.setEnabled(False)
         self.outputLimitMinSpinBox.setEnabled(False)
+
+        self.logger.debug("Widgets parameters disabled")
     
     def kpChanged(self, value):
-        self.logger.info("Kp value changed")
-        print("msg")
+        self.logger.debug(f"Kp value changed to {value:.2f}")
+    
+    def kiChanged(self, value):
+        self.logger.debug(f"Ki value changed to {value:.2f}")
+
+    def kdChanged(self, value):
+        self.logger.debug(f"Kd value changed to {value:.2f}")
+
+    def indirectActionChanged(self, state):
+        state = Qt.CheckState(state)
+        self.logger.debug(f"Indirect action changed to {state}")
+    
+    def proportionnalOnMeasurementChanged(self, state):
+        state = Qt.CheckState(state)
+        self.logger.debug(f"Proportionnal on measurement changed to {state}")
+    
+    def integralLimitEnableChanged(self, state):
+        state = Qt.CheckState(state)
+        self.logger.debug(f"Integral limit enable changed to {state}")
+        self.integralLimitSpinBox.setEnabled(state == Qt.CheckState.Checked)
 
     def setReadOnlyMode(self):
         self.readWriteLabel.setText("Read-only mode")
         self.disableWidgets()
 
-        for w in self.widgets:
-            w.setEnabled(False)
-
     def setReadWriteMode(self):
         self.readWriteLabel.setText("Read/write mode")
         self.enableWidgets()
-
-        for w in self.widgets:
-            w.setEnabled(False)
 
 if __name__=="__main__":
     app = QApplication(sys.argv)
