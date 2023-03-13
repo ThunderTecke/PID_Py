@@ -7,11 +7,22 @@ from PySide6.QtWidgets import QHBoxLayout, QGridLayout
 from PySide6.QtCharts import QChart, QChartView, QLineSeries, QValueAxis    
 from PySide6.QtCore import QTimer, Qt
 
+import logging
+
 import numpy as np
 
 class SetupToolApp(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
+
+        self.logger = logging.getLogger(__name__)
+        handler = logging.StreamHandler()
+        handler.setLevel(logging.INFO)
+
+        logFormat = logging.Formatter('%(levelname)s [%(name)s]: %(message)s')
+        handler.setFormatter(logFormat)
+
+        self.logger.addHandler(handler)
         
         self.setWindowTitle("PID_Py : SetupTool")
         self.setMinimumSize(1000, 300)
@@ -26,14 +37,20 @@ class SetupToolApp(QMainWindow):
         readAction = readWriteGroup.addAction("Read")
         readAction.setCheckable(True)
         readAction.setChecked(True)
+        readAction.triggered.connect(self.setReadOnlyMode)
 
         writeAction = readWriteGroup.addAction("Write")
         writeAction.setCheckable(True)
+        writeAction.triggered.connect(self.setReadWriteMode)
 
         menuReadWrite.addAction(readAction)
         menuReadWrite.addAction(writeAction)
 
         self.menuBar().addMenu(menuReadWrite)
+
+        # ===== Status bar =====
+        self.readWriteLabel = QLabel("Read-only mode")
+        self.statusBar().addPermanentWidget(self.readWriteLabel)
 
         # ===== Real-time graph ====
         # TODO: Store data in a list of QPointF, and use replace to update points in the chart
@@ -87,6 +104,8 @@ class SetupToolApp(QMainWindow):
         self.kpSpinBox.setToolTipDuration(5000)
         self.kpLabel = QLabel("Proportionnal")
         self.kpLabel.setEnabled(False)
+
+        self.kpSpinBox.valueChanged.connect(self.kpChanged)
 
         self.kiSpinBox = QDoubleSpinBox()
         self.kiSpinBox.setEnabled(False)
@@ -309,7 +328,7 @@ class SetupToolApp(QMainWindow):
 
         # ===== Refreshing timer =====
         self.refreshTimer = QTimer(self)
-        self.refreshTimer.timeout.connect(self.refreshData) # type: ignore
+        self.refreshTimer.timeout.connect(self.refreshData)
         self.refreshTimer.start(25)
     
     def refreshData(self):
@@ -324,6 +343,108 @@ class SetupToolApp(QMainWindow):
             self.serie.append(self.alpha, np.sin(self.alpha))
         
         self.alpha += 0.03
+    
+    def enableWidgets(self):
+        self.kpLabel.setEnabled(True)
+        self.kpSpinBox.setEnabled(True)
+
+        self.kiLabel.setEnabled(True)
+        self.kiSpinBox.setEnabled(True)
+
+        self.kdLabel.setEnabled(True)
+        self.kdSpinBox.setEnabled(True)
+
+        self.indirectActionCheckBox.setEnabled(True)
+
+        self.proportionnalOnMeasurementCheckBox.setEnabled(True)
+
+        self.integralLimitEnableCheckBox.setEnabled(True)
+        self.integralLimitSpinBox.setEnabled(self.integralLimitEnableCheckBox.checkState() == Qt.CheckState.Checked)
+
+        self.derivativeOnMeasurementCheckBox.setEnabled(True)
+
+        self.setpointRampEnableCheckBox.setEnabled(True)
+        self.setpointRampSpinBox.setEnabled(self.setpointRampEnableCheckBox.checkState == Qt.CheckState.Checked)
+
+        self.setpointStableLimitEnableCheckBox.setEnabled(True)
+        self.setpointStableLimitSpinBox.setEnabled(self.setpointStableLimitEnableCheckBox.checkState() == Qt.CheckState.Checked)
+        self.setpointStableTimeLabel.setEnabled(self.setpointStableLimitEnableCheckBox.checkState() == Qt.CheckState.Checked)
+        self.setpointStableTimeTimeEdit.setEnabled(self.setpointStableLimitEnableCheckBox.checkState() == Qt.CheckState.Checked)
+
+        self.deadbandEnableCheckBox.setEnabled(True)
+        self.deadbandSpinBox.setEnabled(self.deadbandEnableCheckBox.checkState() == Qt.CheckState.Checked)
+        self.deadbandActivationTimeLabel.setEnabled(self.deadbandEnableCheckBox.checkState() == Qt.CheckState.Checked)
+        self.deadbandActivationTimeTimeEdit.setEnabled(self.deadbandEnableCheckBox.checkState() == Qt.CheckState.Checked)
+
+        self.processValueStableLimitEnableCheckBox.setEnabled(True)
+        self.processValueStableLimitSpinBox.setEnabled(self.processValueStableLimitEnableCheckBox.checkState() == Qt.CheckState.Checked)
+        self.processValueStableTimeLabel.setEnabled(self.processValueStableLimitEnableCheckBox.checkState() == Qt.CheckState.Checked)
+        self.processValueStableTimeTimeEdit.setEnabled(self.processValueStableLimitEnableCheckBox.checkState() == Qt.CheckState.Checked)
+
+        self.outputLimitMaxEnableCheckBox.setEnabled(True)
+        self.outputLimitMaxSpinBox.setEnabled(self.outputLimitMaxEnableCheckBox.checkState() == Qt.CheckState.Checked)
+        self.outputLimitMinEnableCheckBox.setEnabled(True)
+        self.outputLimitMinSpinBox.setEnabled(self.outputLimitMinEnableCheckBox.checkState() == Qt.CheckState.Checked)
+
+    def disableWidgets(self):
+        self.kpLabel.setEnabled(False)
+        self.kpSpinBox.setEnabled(False)
+
+        self.kiLabel.setEnabled(False)
+        self.kiSpinBox.setEnabled(False)
+
+        self.kdLabel.setEnabled(False)
+        self.kdSpinBox.setEnabled(False)
+
+        self.indirectActionCheckBox.setEnabled(False)
+
+        self.proportionnalOnMeasurementCheckBox.setEnabled(False)
+
+        self.integralLimitEnableCheckBox.setEnabled(False)
+        self.integralLimitSpinBox.setEnabled(False)
+
+        self.derivativeOnMeasurementCheckBox.setEnabled(False)
+
+        self.setpointRampEnableCheckBox.setEnabled(False)
+        self.setpointRampSpinBox.setEnabled(False)
+
+        self.setpointStableLimitEnableCheckBox.setEnabled(False)
+        self.setpointStableLimitSpinBox.setEnabled(False)
+        self.setpointStableTimeLabel.setEnabled(False)
+        self.setpointStableTimeTimeEdit.setEnabled(False)
+
+        self.deadbandEnableCheckBox.setEnabled(False)
+        self.deadbandSpinBox.setEnabled(False)
+        self.deadbandActivationTimeLabel.setEnabled(False)
+        self.deadbandActivationTimeTimeEdit.setEnabled(False)
+
+        self.processValueStableLimitEnableCheckBox.setEnabled(False)
+        self.processValueStableLimitSpinBox.setEnabled(False)
+        self.processValueStableTimeLabel.setEnabled(False)
+        self.processValueStableTimeTimeEdit.setEnabled(False)
+
+        self.outputLimitMaxEnableCheckBox.setEnabled(False)
+        self.outputLimitMaxSpinBox.setEnabled(False)
+        self.outputLimitMinEnableCheckBox.setEnabled(False)
+        self.outputLimitMinSpinBox.setEnabled(False)
+    
+    def kpChanged(self, value):
+        self.logger.info("Kp value changed")
+        print("msg")
+
+    def setReadOnlyMode(self):
+        self.readWriteLabel.setText("Read-only mode")
+        self.disableWidgets()
+
+        for w in self.widgets:
+            w.setEnabled(False)
+
+    def setReadWriteMode(self):
+        self.readWriteLabel.setText("Read/write mode")
+        self.enableWidgets()
+
+        for w in self.widgets:
+            w.setEnabled(False)
 
 if __name__=="__main__":
     app = QApplication(sys.argv)
