@@ -263,11 +263,11 @@ If you want to historize PID values, you can configure the historian to record v
 
 ```Python
 from PID_Py.PID import PID
-from PID_Py.PID import HistorianParameters
+from PID_Py.PID import HistorianParams
 
 # Initialization
-historianParameters = HistorianParamters.SETPOINT | HistorianParameters.PROCESS_VALUE
-pid = PID(kp = 10.0, ki = 5.0, kd = 0.0, historianParameters = HistorianParameters)
+HistorianParams = HistorianParams.SETPOINT | HistorianParams.PROCESS_VALUE
+pid = PID(kp = 10.0, ki = 5.0, kd = 0.0, HistorianParams = HistorianParams)
 
 ...
 

@@ -1,5 +1,14 @@
 # Change log
 
+## [1.1.1] - 2023-03-25
+### Added
+
+### Modififed
+
+### Fixed
+- Bug on basic initiallization code #1 issue fix, exception when initialize a PID without historian parameters.
+- Documentation typo. Replaced HistorianParameters by HistorianParams.
+
 ## [1.1.0] - 2023-02-10
 ### Added
 - Simulation mode added
