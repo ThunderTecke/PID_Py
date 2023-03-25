@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
@@ -7,7 +7,7 @@ packages = ["PID_Py"]
 
 [project]
 name = "PID_Py"
-version = "1.1.0"
+version = "1.1.1"
 authors = [{name = "ThunderTecke", email = "thunder.tecke@gmail.com"}]
 maintainers = [{name = "ThunderTecke", email = "thunder.tecke@gmail.com"}]
 keywords = ["pid", "controller", "pid-controller", "control", "pid-control", "python", "raspberry", "raspberrypi", "raspberry-pi"]

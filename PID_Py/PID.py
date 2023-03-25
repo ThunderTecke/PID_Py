@@ -232,29 +232,32 @@ class PID:
 
         self.historianLenght = historianLenght
         
-        if HistorianParams.P in self.historianParams:
-            self.historian["P"] = []
-        
-        if HistorianParams.I in self.historianParams:
-            self.historian["I"] = []
+        if self.historianParams is not None:
+            if HistorianParams.P in self.historianParams:
+                self.historian["P"] = []
+            
+            if HistorianParams.I in self.historianParams:
+                self.historian["I"] = []
 
-        if HistorianParams.D in self.historianParams:
-            self.historian["D"] = []
-        
-        if HistorianParams.OUTPUT in self.historianParams:
-            self.historian["OUTPUT"] = []
-        
-        if HistorianParams.SETPOINT in self.historianParams:
-            self.historian["SETPOINT"] = []
-        
-        if HistorianParams.PROCESS_VALUE in self.historianParams:
-            self.historian["PROCESS_VALUE"] = []
+            if HistorianParams.D in self.historianParams:
+                self.historian["D"] = []
+            
+            if HistorianParams.OUTPUT in self.historianParams:
+                self.historian["OUTPUT"] = []
+            
+            if HistorianParams.SETPOINT in self.historianParams:
+                self.historian["SETPOINT"] = []
+            
+            if HistorianParams.PROCESS_VALUE in self.historianParams:
+                self.historian["PROCESS_VALUE"] = []
 
-        if HistorianParams.ERROR in self.historianParams:
-            self.historian["ERROR"] = []
+            if HistorianParams.ERROR in self.historianParams:
+                self.historian["ERROR"] = []
 
-        if (HistorianParams.P in self.historianParams) or (HistorianParams.I in self.historianParams) or (HistorianParams.D in self.historianParams) or (HistorianParams.ERROR in self.historianParams) or (HistorianParams.OUTPUT in self.historianParams) or (HistorianParams.PROCESS_VALUE in self.historianParams) or (HistorianParams.SETPOINT in self.historianParams):
-            self.historian["TIME"] = []
+            if (HistorianParams.P in self.historianParams) or (HistorianParams.I in self.historianParams) or (HistorianParams.D in self.historianParams) or (HistorianParams.ERROR in self.historianParams) or (HistorianParams.OUTPUT in self.historianParams) or (HistorianParams.PROCESS_VALUE in self.historianParams) or (HistorianParams.SETPOINT in self.historianParams):
+                self.historian["TIME"] = []
+        else:
+            self.historian = None
         
         # Internal attributes
         self._lastTime = None
