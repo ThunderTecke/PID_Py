@@ -5,7 +5,7 @@ from PySide6.QtGui import QPainter, QActionGroup
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QDoubleSpinBox, QLabel, QFrame, QCheckBox, QTimeEdit, QScrollArea, QMenuBar, QMenu
 from PySide6.QtWidgets import QHBoxLayout, QGridLayout
 from PySide6.QtCharts import QChart, QChartView, QLineSeries, QValueAxis    
-from PySide6.QtCore import QTimer, Qt
+from PySide6.QtCore import QTimer, Qt, QTime
 
 import logging
 
@@ -85,7 +85,7 @@ class SetupToolApp(QMainWindow):
         self.parametersScrollArea = QScrollArea()
         self.parametersScrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.parametersScrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.parametersScrollArea.setMinimumWidth(350)
+        self.parametersScrollArea.setFixedWidth(350)
 
         self.parametersWidget = QWidget()
 
@@ -166,42 +166,62 @@ class SetupToolApp(QMainWindow):
         self.proportionnalOnMeasurementCheckBox.setToolTip("Calculate the proportionnal term on the process value")
         self.proportionnalOnMeasurementCheckBox.setToolTipDuration(5000)
 
+        self.proportionnalOnMeasurementCheckBox.stateChanged.connect(self.proportionnalOnMeasurementChanged)
+
         self.integralLimitEnableCheckBox = QCheckBox("Integral limit")
         self.integralLimitEnableCheckBox.setEnabled(False)
         self.integralLimitEnableCheckBox.setToolTip("Clamp integral term between [-value, value]")
         self.integralLimitEnableCheckBox.setToolTipDuration(5000)
+
+        self.integralLimitEnableCheckBox.stateChanged.connect(self.integralLimitEnableChanged)
+
         self.integralLimitSpinBox = QDoubleSpinBox()
         self.integralLimitSpinBox.setEnabled(False)
         self.integralLimitSpinBox.setToolTip("Clamp integral term between [-value, value]")
         self.integralLimitSpinBox.setToolTipDuration(5000)
+
+        self.integralLimitSpinBox.valueChanged.connect(self.integralLimitChanged)
 
         self.derivativeOnMeasurementCheckBox = QCheckBox("Derivative on measurement")
         self.derivativeOnMeasurementCheckBox.setEnabled(False)
         self.derivativeOnMeasurementCheckBox.setToolTip("Calculate the derivative term on the process value")
         self.derivativeOnMeasurementCheckBox.setToolTipDuration(5000)
 
+        self.derivativeOnMeasurementCheckBox.stateChanged.connect(self.derivativeOnMeasurementChanged)
+
         self.setpointRampEnableCheckBox = QCheckBox("Setpoint ramp")
         self.setpointRampEnableCheckBox.setEnabled(False)
         self.setpointRampEnableCheckBox.setToolTip("Apply a ramp on the setpoint (unit/s)")
         self.setpointRampEnableCheckBox.setToolTipDuration(5000)
+
+        self.setpointRampEnableCheckBox.stateChanged.connect(self.setpointRampEnableChanged)
+
         self.setpointRampSpinBox = QDoubleSpinBox()
         self.setpointRampSpinBox.setEnabled(False)
         self.setpointRampSpinBox.setToolTip("Apply a ramp on the setpoint (unit/s)")
         self.setpointRampSpinBox.setToolTipDuration(5000)
 
+        self.setpointRampSpinBox.valueChanged.connect(self.setpointRampChanged)
+
         self.setpointStableLimitEnableCheckBox = QCheckBox("Setpoint stable")
         self.setpointStableLimitEnableCheckBox.setEnabled(False)
         self.setpointStableLimitEnableCheckBox.setToolTip("Maximum difference between the setpoint and the process value to be considered reached")
         self.setpointStableLimitEnableCheckBox.setToolTipDuration(5000)
+
+        self.setpointStableLimitEnableCheckBox.stateChanged.connect(self.setpointStableEnableChanged)
+
         self.setpointStableLimitSpinBox = QDoubleSpinBox()
         self.setpointStableLimitSpinBox.setEnabled(False)
         self.setpointStableLimitSpinBox.setToolTip("Maximum difference between the setpoint and the process value to be considered reached")
         self.setpointStableLimitSpinBox.setToolTipDuration(5000)
 
+        self.setpointStableLimitSpinBox.valueChanged.connect(self.setpointStableChanged)
+
         self.setpointStableTimeLabel = QLabel("Setpoint stable time")
         self.setpointStableTimeLabel.setEnabled(False)
         self.setpointStableTimeLabel.setToolTip("Maximum difference between the setpoint and the process value to be considered reached")
         self.setpointStableTimeLabel.setToolTipDuration(5000)
+
         self.setpointStableTimeTimeEdit = QTimeEdit()
         self.setpointStableTimeTimeEdit.setEnabled(False)
         self.setpointStableTimeTimeEdit.setToolTip("Maximum difference between the setpoint and the process value to be considered reached")
@@ -209,19 +229,27 @@ class SetupToolApp(QMainWindow):
         self.setpointStableTimeTimeEdit.setDisplayFormat("hh:mm:ss")
         self.setpointStableTimeTimeEdit.setButtonSymbols(QTimeEdit.ButtonSymbols.NoButtons)
 
+        self.setpointStableTimeTimeEdit.timeChanged.connect(self.setpointStableTimeChanged)
+
         self.deadbandEnableCheckBox = QCheckBox("Deadband")
         self.deadbandEnableCheckBox.setEnabled(False)
         self.deadbandEnableCheckBox.setToolTip("The minimum amount of output variation to applied this variation")
         self.deadbandEnableCheckBox.setToolTipDuration(5000)
+
+        self.deadbandEnableCheckBox.stateChanged.connect(self.deadbandEnableChanged)
+
         self.deadbandSpinBox = QDoubleSpinBox()
         self.deadbandSpinBox.setEnabled(False)
         self.deadbandSpinBox.setToolTip("The minimum amount of output variation to applied this variation")
         self.deadbandSpinBox.setToolTipDuration(5000)
 
+        self.deadbandSpinBox.valueChanged.connect(self.deadbandChanged)
+
         self.deadbandActivationTimeLabel = QLabel("Deadband activation time")
         self.deadbandActivationTimeLabel.setEnabled(False)
         self.deadbandActivationTimeLabel.setToolTip("The minimum amount of output variation to applied this variation")
         self.deadbandActivationTimeLabel.setToolTipDuration(5000)
+
         self.deadbandActivationTimeTimeEdit = QTimeEdit()
         self.deadbandActivationTimeTimeEdit.setEnabled(False)
         self.deadbandActivationTimeTimeEdit.setToolTip("The minimum amount of output variation to applied this variation")
@@ -229,19 +257,27 @@ class SetupToolApp(QMainWindow):
         self.deadbandActivationTimeTimeEdit.setDisplayFormat("hh:mm:ss")
         self.deadbandActivationTimeTimeEdit.setButtonSymbols(QTimeEdit.ButtonSymbols.NoButtons)
 
+        self.deadbandActivationTimeTimeEdit.timeChanged.connect(self.deadbandActivationTimeChanged)
+
         self.processValueStableLimitEnableCheckBox = QCheckBox("Process value stable")
         self.processValueStableLimitEnableCheckBox.setEnabled(False)
         self.processValueStableLimitEnableCheckBox.setToolTip("The maximum variation of the process value to be considered stable")
         self.processValueStableLimitEnableCheckBox.setToolTipDuration(5000)
+
+        self.processValueStableLimitEnableCheckBox.stateChanged.connect(self.processValueStableLimitEnableChanged)
+
         self.processValueStableLimitSpinBox = QDoubleSpinBox()
         self.processValueStableLimitSpinBox.setEnabled(False)
         self.processValueStableLimitSpinBox.setToolTip("The maximum variation of the process value to be considered stable")
         self.processValueStableLimitSpinBox.setToolTipDuration(5000)
 
+        self.processValueStableLimitSpinBox.valueChanged.connect(self.processValueStableLimitChanged)
+
         self.processValueStableTimeLabel = QLabel("Process value stable time")
         self.processValueStableTimeLabel.setEnabled(False)
         self.processValueStableTimeLabel.setToolTip("The maximum variation of the process value to be considered stable")
         self.processValueStableTimeLabel.setToolTipDuration(5000)
+
         self.processValueStableTimeTimeEdit = QTimeEdit()
         self.processValueStableTimeTimeEdit.setEnabled(False)
         self.processValueStableTimeTimeEdit.setToolTip("The maximum variation of the process value to be considered stable")
@@ -249,23 +285,35 @@ class SetupToolApp(QMainWindow):
         self.processValueStableTimeTimeEdit.setDisplayFormat("hh:mm:ss")
         self.processValueStableTimeTimeEdit.setButtonSymbols(QTimeEdit.ButtonSymbols.NoButtons)
 
+        self.processValueStableTimeTimeEdit.timeChanged.connect(self.processValueStableTimeChanged)
+
         self.outputLimitMaxEnableCheckBox = QCheckBox("Maximum")
         self.outputLimitMaxEnableCheckBox.setEnabled(False)
         self.outputLimitMaxEnableCheckBox.setToolTip("Maximum output")
         self.outputLimitMaxEnableCheckBox.setToolTipDuration(5000)
+
+        self.outputLimitMaxEnableCheckBox.stateChanged.connect(self.maximumLimitEnableChanged)
+
         self.outputLimitMaxSpinBox = QDoubleSpinBox()
         self.outputLimitMaxSpinBox.setEnabled(False)
         self.outputLimitMaxSpinBox.setToolTip("Maximum output")
         self.outputLimitMaxSpinBox.setToolTipDuration(5000)
 
+        self.outputLimitMaxSpinBox.valueChanged.connect(self.maximumLimitChanged)
+
         self.outputLimitMinEnableCheckBox = QCheckBox("Minimum")
         self.outputLimitMinEnableCheckBox.setEnabled(False)
         self.outputLimitMinEnableCheckBox.setToolTip("Minimum output")
         self.outputLimitMinEnableCheckBox.setToolTipDuration(5000)
+
+        self.outputLimitMinEnableCheckBox.stateChanged.connect(self.minimumLimitEnableChanged)
+
         self.outputLimitMinSpinBox = QDoubleSpinBox()
         self.outputLimitMinSpinBox.setEnabled(False)
         self.outputLimitMinSpinBox.setToolTip("Minimum output")
         self.outputLimitMinSpinBox.setToolTipDuration(5000)
+
+        self.outputLimitMinSpinBox.valueChanged.connect(self.minimumLimitChanged)
 
         parametersLabel = QLabel("Parameters")
         parametersLabel.setAlignment(Qt.AlignmentFlag.AlignHCenter)
@@ -353,91 +401,92 @@ class SetupToolApp(QMainWindow):
         
         self.alpha += 0.03
     
+    def kpSetEnabled(self, enabled):
+        self.kpLabel.setEnabled(enabled)
+        self.kpSpinBox.setEnabled(enabled)
+    
+    def kiSetEnabled(self, enabled):
+        self.kiLabel.setEnabled(enabled)
+        self.kiSpinBox.setEnabled(enabled)
+    
+    def kdSetEnabled(self, enabled):
+        self.kdLabel.setEnabled(enabled)
+        self.kdSpinBox.setEnabled(enabled)
+    
+    def indirectActionSetEnabled(self, enabled):
+        self.indirectActionCheckBox.setEnabled(enabled)
+    
+    def proportionnalOnMeasurementSetEnabled(self, enabled):
+        self.proportionnalOnMeasurementCheckBox.setEnabled(enabled)
+    
+    def integralLimitSetEnabled(self, enabled):
+        self.integralLimitEnableCheckBox.setEnabled(enabled)
+        self.integralLimitSpinBox.setEnabled(enabled and (self.integralLimitEnableCheckBox.checkState() == Qt.CheckState.Checked))
+    
+    def derivativeOnMeasurementSetEnabled(self, enabled):
+        self.derivativeOnMeasurementCheckBox.setEnabled(enabled)
+    
+    def setpointRampSetEnabled(self, enabled):
+        self.setpointRampEnableCheckBox.setEnabled(enabled)
+        self.setpointRampSpinBox.setEnabled(enabled and (self.setpointRampEnableCheckBox.checkState() == Qt.CheckState.Checked))
+    
+    def setpointStableSetEnabled(self, enabled):
+        self.setpointStableLimitEnableCheckBox.setEnabled(enabled)
+        self.setpointStableLimitSpinBox.setEnabled(enabled and (self.setpointStableLimitEnableCheckBox.checkState() == Qt.CheckState.Checked))
+        self.setpointStableTimeLabel.setEnabled(enabled and (self.setpointStableLimitEnableCheckBox.checkState() == Qt.CheckState.Checked))
+        self.setpointStableTimeTimeEdit.setEnabled(enabled and (self.setpointStableLimitEnableCheckBox.checkState() == Qt.CheckState.Checked))
+
+    def deadbandSetEnabled(self, enabled):
+        self.deadbandEnableCheckBox.setEnabled(enabled)
+        self.deadbandSpinBox.setEnabled(enabled and (self.deadbandEnableCheckBox.checkState() == Qt.CheckState.Checked))
+        self.deadbandActivationTimeLabel.setEnabled(enabled and (self.deadbandEnableCheckBox.checkState() == Qt.CheckState.Checked))
+        self.deadbandActivationTimeTimeEdit.setEnabled(enabled and (self.deadbandEnableCheckBox.checkState() == Qt.CheckState.Checked))
+
+    def processValueStableSetEnabled(self, enabled):
+        self.processValueStableLimitEnableCheckBox.setEnabled(enabled)
+        self.processValueStableLimitSpinBox.setEnabled(enabled and (self.processValueStableLimitEnableCheckBox.checkState() == Qt.CheckState.Checked))
+        self.processValueStableTimeLabel.setEnabled(enabled and (self.processValueStableLimitEnableCheckBox.checkState() == Qt.CheckState.Checked))
+        self.processValueStableTimeTimeEdit.setEnabled(enabled and (self.processValueStableLimitEnableCheckBox.checkState() == Qt.CheckState.Checked))
+
+    def maximumLimitSetEnabled(self, enabled):
+        self.outputLimitMaxEnableCheckBox.setEnabled(enabled)
+        self.outputLimitMaxSpinBox.setEnabled(enabled and (self.outputLimitMaxEnableCheckBox.checkState() == Qt.CheckState.Checked))
+    
+    def minimumLimitSetEnabled(self, enabled):
+        self.outputLimitMinEnableCheckBox.setEnabled(enabled)
+        self.outputLimitMinSpinBox.setEnabled(enabled and (self.outputLimitMinEnableCheckBox.checkState() == Qt.CheckState.Checked))
+    
     def enableWidgets(self):
-        self.kpLabel.setEnabled(True)
-        self.kpSpinBox.setEnabled(True)
-
-        self.kiLabel.setEnabled(True)
-        self.kiSpinBox.setEnabled(True)
-
-        self.kdLabel.setEnabled(True)
-        self.kdSpinBox.setEnabled(True)
-
-        self.indirectActionCheckBox.setEnabled(True)
-
-        self.proportionnalOnMeasurementCheckBox.setEnabled(True)
-
-        self.integralLimitEnableCheckBox.setEnabled(True)
-        self.integralLimitSpinBox.setEnabled(self.integralLimitEnableCheckBox.checkState() == Qt.CheckState.Checked)
-
-        self.derivativeOnMeasurementCheckBox.setEnabled(True)
-
-        self.setpointRampEnableCheckBox.setEnabled(True)
-        self.setpointRampSpinBox.setEnabled(self.setpointRampEnableCheckBox.checkState == Qt.CheckState.Checked)
-
-        self.setpointStableLimitEnableCheckBox.setEnabled(True)
-        self.setpointStableLimitSpinBox.setEnabled(self.setpointStableLimitEnableCheckBox.checkState() == Qt.CheckState.Checked)
-        self.setpointStableTimeLabel.setEnabled(self.setpointStableLimitEnableCheckBox.checkState() == Qt.CheckState.Checked)
-        self.setpointStableTimeTimeEdit.setEnabled(self.setpointStableLimitEnableCheckBox.checkState() == Qt.CheckState.Checked)
-
-        self.deadbandEnableCheckBox.setEnabled(True)
-        self.deadbandSpinBox.setEnabled(self.deadbandEnableCheckBox.checkState() == Qt.CheckState.Checked)
-        self.deadbandActivationTimeLabel.setEnabled(self.deadbandEnableCheckBox.checkState() == Qt.CheckState.Checked)
-        self.deadbandActivationTimeTimeEdit.setEnabled(self.deadbandEnableCheckBox.checkState() == Qt.CheckState.Checked)
-
-        self.processValueStableLimitEnableCheckBox.setEnabled(True)
-        self.processValueStableLimitSpinBox.setEnabled(self.processValueStableLimitEnableCheckBox.checkState() == Qt.CheckState.Checked)
-        self.processValueStableTimeLabel.setEnabled(self.processValueStableLimitEnableCheckBox.checkState() == Qt.CheckState.Checked)
-        self.processValueStableTimeTimeEdit.setEnabled(self.processValueStableLimitEnableCheckBox.checkState() == Qt.CheckState.Checked)
-
-        self.outputLimitMaxEnableCheckBox.setEnabled(True)
-        self.outputLimitMaxSpinBox.setEnabled(self.outputLimitMaxEnableCheckBox.checkState() == Qt.CheckState.Checked)
-        self.outputLimitMinEnableCheckBox.setEnabled(True)
-        self.outputLimitMinSpinBox.setEnabled(self.outputLimitMinEnableCheckBox.checkState() == Qt.CheckState.Checked)
+        self.kpSetEnabled(True)
+        self.kiSetEnabled(True)
+        self.kdSetEnabled(True)
+        self.indirectActionSetEnabled(True)
+        self.proportionnalOnMeasurementSetEnabled(True)
+        self.integralLimitSetEnabled(True)
+        self.derivativeOnMeasurementSetEnabled(True)
+        self.setpointRampSetEnabled(True)
+        self.setpointStableSetEnabled(True)
+        self.deadbandSetEnabled(True)
+        self.processValueStableSetEnabled(True)
+        self.maximumLimitSetEnabled(True)
+        self.minimumLimitSetEnabled(True)
 
         self.logger.debug("Widgets parameters enabled")
 
     def disableWidgets(self):
-        self.kpLabel.setEnabled(False)
-        self.kpSpinBox.setEnabled(False)
-
-        self.kiLabel.setEnabled(False)
-        self.kiSpinBox.setEnabled(False)
-
-        self.kdLabel.setEnabled(False)
-        self.kdSpinBox.setEnabled(False)
-
-        self.indirectActionCheckBox.setEnabled(False)
-
-        self.proportionnalOnMeasurementCheckBox.setEnabled(False)
-
-        self.integralLimitEnableCheckBox.setEnabled(False)
-        self.integralLimitSpinBox.setEnabled(False)
-
-        self.derivativeOnMeasurementCheckBox.setEnabled(False)
-
-        self.setpointRampEnableCheckBox.setEnabled(False)
-        self.setpointRampSpinBox.setEnabled(False)
-
-        self.setpointStableLimitEnableCheckBox.setEnabled(False)
-        self.setpointStableLimitSpinBox.setEnabled(False)
-        self.setpointStableTimeLabel.setEnabled(False)
-        self.setpointStableTimeTimeEdit.setEnabled(False)
-
-        self.deadbandEnableCheckBox.setEnabled(False)
-        self.deadbandSpinBox.setEnabled(False)
-        self.deadbandActivationTimeLabel.setEnabled(False)
-        self.deadbandActivationTimeTimeEdit.setEnabled(False)
-
-        self.processValueStableLimitEnableCheckBox.setEnabled(False)
-        self.processValueStableLimitSpinBox.setEnabled(False)
-        self.processValueStableTimeLabel.setEnabled(False)
-        self.processValueStableTimeTimeEdit.setEnabled(False)
-
-        self.outputLimitMaxEnableCheckBox.setEnabled(False)
-        self.outputLimitMaxSpinBox.setEnabled(False)
-        self.outputLimitMinEnableCheckBox.setEnabled(False)
-        self.outputLimitMinSpinBox.setEnabled(False)
+        self.kpSetEnabled(False)
+        self.kiSetEnabled(False)
+        self.kdSetEnabled(False)
+        self.indirectActionSetEnabled(False)
+        self.proportionnalOnMeasurementSetEnabled(False)
+        self.integralLimitSetEnabled(False)
+        self.derivativeOnMeasurementSetEnabled(False)
+        self.setpointRampSetEnabled(False)
+        self.setpointStableSetEnabled(False)
+        self.deadbandSetEnabled(False)
+        self.processValueStableSetEnabled(False)
+        self.maximumLimitSetEnabled(False)
+        self.minimumLimitSetEnabled(False)
 
         self.logger.debug("Widgets parameters disabled")
     
@@ -461,7 +510,71 @@ class SetupToolApp(QMainWindow):
     def integralLimitEnableChanged(self, state):
         state = Qt.CheckState(state)
         self.logger.debug(f"Integral limit enable changed to {state}")
-        self.integralLimitSpinBox.setEnabled(state == Qt.CheckState.Checked)
+        self.integralLimitSetEnabled(True)
+    
+    def integralLimitChanged(self, value):
+        self.logger.debug(f"Integral limit changed to {value}")
+
+    def derivativeOnMeasurementChanged(self, state):
+        state = Qt.CheckState(state)
+        self.logger.debug(f"Derivative on measurement changed to {state}")
+
+    def setpointRampEnableChanged(self, state):
+        state = Qt.CheckState(state)
+        self.logger.debug(f"Setpoint ramp enable changed to {state}")
+        self.setpointRampSetEnabled(True)
+    
+    def setpointRampChanged(self, value):
+        self.logger.debug(f"Setpoint ramp changed to {value}")
+    
+    def setpointStableEnableChanged(self, state):
+        state = Qt.CheckState(state)
+        self.logger.debug(f"Setpoint stable enable changed to {state}")
+        self.setpointStableSetEnabled(True)
+    
+    def setpointStableChanged(self, value):
+        self.logger.debug(f"Setpoint stable changed to {value}")
+
+    def setpointStableTimeChanged(self, time: QTime):
+        self.logger.debug(f"Setpoint stable time changed to {time.toString('hh:mm:ss')}")
+    
+    def deadbandEnableChanged(self, state):
+        state = Qt.CheckState(state)
+        self.logger.debug(f"Deadband enable changed to {state}")
+        self.deadbandSetEnabled(True)
+    
+    def deadbandChanged(self, value):
+        self.logger.debug(f"Deadband changed to {value}")
+    
+    def deadbandActivationTimeChanged(self, time: QTime):
+        self.logger.debug(f"Deadband activation time changed to {time.toString('hh:mm:ss')}")
+    
+    def processValueStableLimitEnableChanged(self, state):
+        state = Qt.CheckState(state)
+        self.logger.debug(f"Process value stable enable changed to {state}")
+        self.processValueStableSetEnabled(True)
+    
+    def processValueStableLimitChanged(self, value):
+        self.logger.debug(f"Process value stable limit changed to {value}")
+    
+    def processValueStableTimeChanged(self, time: QTime):
+        self.logger.debug(f"Process value stable time changed to {time.toString('hh:mm:ss')}")
+
+    def maximumLimitEnableChanged(self, state):
+        state = Qt.CheckState(state)
+        self.logger.debug(f"Maximum output limit enable changed to {state}")
+        self.maximumLimitSetEnabled(True)
+    
+    def maximumLimitChanged(self, value):
+        self.logger.debug(f"Maximum output limit changed to {value}")
+
+    def minimumLimitEnableChanged(self, state):
+        state = Qt.CheckState(state)
+        self.logger.debug(f"Minimum output limit enable changed to {state}")
+        self.minimumLimitSetEnabled(True)
+    
+    def minimumLimitChanged(self, value):
+        self.logger.debug(f"Minimum output limit changed to {value}")
 
     def setReadOnlyMode(self):
         self.readWriteLabel.setText("Read-only mode")
