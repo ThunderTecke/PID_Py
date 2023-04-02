@@ -2,18 +2,22 @@ import sys
 
 from PySide6 import QtGui
 from PySide6.QtGui import QPainter, QActionGroup
-from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QDoubleSpinBox, QLabel, QFrame, QCheckBox, QTimeEdit, QScrollArea, QMenuBar, QMenu
+from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QDoubleSpinBox, QLabel, QFrame, QCheckBox, QTimeEdit, QScrollArea, QMenuBar, QMenu, QMessageBox
 from PySide6.QtWidgets import QHBoxLayout, QGridLayout
 from PySide6.QtCharts import QChart, QChartView, QLineSeries, QValueAxis    
 from PySide6.QtCore import QTimer, Qt, QTime
 
 import logging
 
+from PID_Py.PID import PID
+
 import numpy as np
 
 class SetupToolApp(QMainWindow):
-    def __init__(self) -> None:
+    def __init__(self, pid: PID) -> None:
         super().__init__()
+
+        self.pid = pid
 
         self.logger = logging.getLogger(__name__)
         handler = logging.StreamHandler(sys.stdout)
@@ -35,17 +39,17 @@ class SetupToolApp(QMainWindow):
 
         readWriteGroup = QActionGroup(self)
         readWriteGroup.setExclusive(True)
-        readAction = readWriteGroup.addAction("Read")
-        readAction.setCheckable(True)
-        readAction.setChecked(True)
-        readAction.triggered.connect(self.setReadOnlyMode)
+        self.readAction = readWriteGroup.addAction("Read")
+        self.readAction.setCheckable(True)
+        self.readAction.setChecked(True)
+        self.readAction.triggered.connect(self.setReadOnlyMode)
 
-        writeAction = readWriteGroup.addAction("Write")
-        writeAction.setCheckable(True)
-        writeAction.triggered.connect(self.setReadWriteMode)
+        self.writeAction = readWriteGroup.addAction("Write")
+        self.writeAction.setCheckable(True)
+        self.writeAction.triggered.connect(self.setReadWriteMode)
 
-        menuReadWrite.addAction(readAction)
-        menuReadWrite.addAction(writeAction)
+        menuReadWrite.addAction(self.readAction)
+        menuReadWrite.addAction(self.writeAction)
 
         self.menuBar().addMenu(menuReadWrite)
 
@@ -578,16 +582,24 @@ class SetupToolApp(QMainWindow):
 
     def setReadOnlyMode(self):
         self.readWriteLabel.setText("Read-only mode")
+        self.statusBar().showMessage("Read-only mode activated", 10000)
         self.disableWidgets()
 
     def setReadWriteMode(self):
-        self.readWriteLabel.setText("Read/write mode")
-        self.enableWidgets()
+        if(QMessageBox.question(self, 'Read/write mode', 'Are you sure to activate read/write mode?') == QMessageBox.StandardButton.Yes):
+            self.readWriteLabel.setText("Read/write mode")
+            self.statusBar().showMessage("Read/write mode activated", 10000)
+            self.enableWidgets()
+        else:
+            self.statusBar().showMessage("Read/write mode activation cancelled", 10000)
+            self.readAction.setChecked(True)
 
 if __name__=="__main__":
     app = QApplication(sys.argv)
 
-    setupToolApp = SetupToolApp()
+    pid = PID(10.0, 5.0, 0.0)
+
+    setupToolApp = SetupToolApp(pid=pid)
     setupToolApp.show()
 
     app.exec()
