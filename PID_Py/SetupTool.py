@@ -1,8 +1,8 @@
 import sys
 
 from PySide6 import QtGui
-from PySide6.QtGui import QPainter, QActionGroup
-from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QDoubleSpinBox, QLabel, QFrame, QCheckBox, QTimeEdit, QScrollArea, QMenuBar, QMenu, QMessageBox
+from PySide6.QtGui import QPainter, QActionGroup, QAction
+from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QDoubleSpinBox, QLabel, QFrame, QCheckBox, QTimeEdit, QScrollArea, QMenuBar, QMenu, QMessageBox, QPushButton
 from PySide6.QtWidgets import QHBoxLayout, QGridLayout
 from PySide6.QtCharts import QChart, QChartView, QLineSeries, QValueAxis
 from PySide6.QtCore import QTimer, Qt, QTime, QPointF
@@ -35,23 +35,32 @@ class SetupToolApp(QMainWindow):
         # ===== Menu bar =====
         self.setMenuBar(QMenuBar())
 
-        menuReadWrite = QMenu("Read/Write")
+        menuControl = QMenu("Control")
 
-        readWriteGroup = QActionGroup(self)
-        readWriteGroup.setExclusive(True)
-        self.readAction = readWriteGroup.addAction("Read")
+        self.takeControlAction = QAction("Control")
+        self.takeControlAction.setCheckable(True)
+        self.takeControlAction.toggled.connect(self.controlChanged)
+
+        menuControl.addAction(self.takeControlAction)
+
+        menuParameters = QMenu("Parameters")
+
+        parametersGroup = QActionGroup(self)
+        parametersGroup.setExclusive(True)
+        self.readAction = parametersGroup.addAction("Read")
         self.readAction.setCheckable(True)
         self.readAction.setChecked(True)
         self.readAction.triggered.connect(self.setReadOnlyMode)
 
-        self.writeAction = readWriteGroup.addAction("Write")
+        self.writeAction = parametersGroup.addAction("Write")
         self.writeAction.setCheckable(True)
         self.writeAction.triggered.connect(self.setReadWriteMode)
 
-        menuReadWrite.addAction(self.readAction)
-        menuReadWrite.addAction(self.writeAction)
+        menuParameters.addAction(self.readAction)
+        menuParameters.addAction(self.writeAction)
 
-        self.menuBar().addMenu(menuReadWrite)
+        self.menuBar().addMenu(menuControl)
+        self.menuBar().addMenu(menuParameters)
 
         # ===== Status bar =====
         self.readWriteLabel = QLabel("Read-only mode")
@@ -293,33 +302,6 @@ class SetupToolApp(QMainWindow):
 
         self.processValueStableTimeTimeEdit.timeChanged.connect(self.processValueStableTimeChanged)
 
-        self.outputLimitMaxEnableCheckBox = QCheckBox("Maximum")
-        self.outputLimitMaxEnableCheckBox.setEnabled(False)
-        self.outputLimitMaxEnableCheckBox.setToolTip("Maximum output")
-        self.outputLimitMaxEnableCheckBox.setToolTipDuration(5000)
-
-        self.outputLimitMaxEnableCheckBox.stateChanged.connect(self.maximumLimitEnableChanged)
-
-        self.outputLimitMaxSpinBox = QDoubleSpinBox()
-        self.outputLimitMaxSpinBox.setEnabled(False)
-        self.outputLimitMaxSpinBox.setToolTip("Maximum output")
-        self.outputLimitMaxSpinBox.setToolTipDuration(5000)
-
-        self.outputLimitMaxSpinBox.valueChanged.connect(self.maximumLimitChanged)
-
-        self.outputLimitMinEnableCheckBox = QCheckBox("Minimum")
-        self.outputLimitMinEnableCheckBox.setEnabled(False)
-        self.outputLimitMinEnableCheckBox.setToolTip("Minimum output")
-        self.outputLimitMinEnableCheckBox.setToolTipDuration(5000)
-
-        self.outputLimitMinEnableCheckBox.stateChanged.connect(self.minimumLimitEnableChanged)
-
-        self.outputLimitMinSpinBox = QDoubleSpinBox()
-        self.outputLimitMinSpinBox.setEnabled(False)
-        self.outputLimitMinSpinBox.setToolTip("Minimum output")
-        self.outputLimitMinSpinBox.setToolTipDuration(5000)
-
-        self.outputLimitMinSpinBox.valueChanged.connect(self.minimumLimitChanged)
 
         parametersLabel = QLabel("Parameters")
         parametersLabel.setAlignment(Qt.AlignmentFlag.AlignHCenter)
@@ -355,6 +337,34 @@ class SetupToolApp(QMainWindow):
         self.parametersLayout.addWidget(self.processValueStableTimeTimeEdit, 16, 2)
 
         # Output limits
+        self.outputLimitMaxEnableCheckBox = QCheckBox("Maximum")
+        self.outputLimitMaxEnableCheckBox.setEnabled(False)
+        self.outputLimitMaxEnableCheckBox.setToolTip("Maximum output")
+        self.outputLimitMaxEnableCheckBox.setToolTipDuration(5000)
+
+        self.outputLimitMaxEnableCheckBox.stateChanged.connect(self.maximumLimitEnableChanged)
+
+        self.outputLimitMaxSpinBox = QDoubleSpinBox()
+        self.outputLimitMaxSpinBox.setEnabled(False)
+        self.outputLimitMaxSpinBox.setToolTip("Maximum output")
+        self.outputLimitMaxSpinBox.setToolTipDuration(5000)
+
+        self.outputLimitMaxSpinBox.valueChanged.connect(self.maximumLimitChanged)
+
+        self.outputLimitMinEnableCheckBox = QCheckBox("Minimum")
+        self.outputLimitMinEnableCheckBox.setEnabled(False)
+        self.outputLimitMinEnableCheckBox.setToolTip("Minimum output")
+        self.outputLimitMinEnableCheckBox.setToolTipDuration(5000)
+
+        self.outputLimitMinEnableCheckBox.stateChanged.connect(self.minimumLimitEnableChanged)
+
+        self.outputLimitMinSpinBox = QDoubleSpinBox()
+        self.outputLimitMinSpinBox.setEnabled(False)
+        self.outputLimitMinSpinBox.setToolTip("Minimum output")
+        self.outputLimitMinSpinBox.setToolTipDuration(5000)
+
+        self.outputLimitMinSpinBox.valueChanged.connect(self.minimumLimitChanged)
+
         separator2 = QFrame()
         separator2.setFrameShape(QFrame.Shape.HLine)
         separator2.setFrameShadow(QFrame.Shadow.Raised)
@@ -372,6 +382,28 @@ class SetupToolApp(QMainWindow):
 
         self.parametersLayout.addWidget(self.outputLimitMinEnableCheckBox, 20, 0, 1, 2)
         self.parametersLayout.addWidget(self.outputLimitMinSpinBox, 20, 2)
+
+        # Setpoint control
+        separator3 = QFrame()
+        separator3.setFrameShape(QFrame.Shape.HLine)
+        separator3.setFrameShadow(QFrame.Shadow.Raised)
+
+        self.parametersLayout.addWidget(separator3, 21, 0, 1, 3)
+
+        setpointControlLabel = QLabel("Setpoint")
+        setpointControlLabel.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        setpointControlLabel.setStyleSheet("font-size: 24px")
+
+        self.setpointLabel = QLabel("Setpoint")
+        self.setpointSpinBox = QDoubleSpinBox()
+        self.setpointSpinBox.setEnabled(False)
+        
+        self.applySetpointPushButton = QPushButton("Apply")
+
+        self.parametersLayout.addWidget(setpointControlLabel, 22, 0, 1, 3)
+
+        self.parametersLayout.addWidget(self.setpointLabel, 23, 1)
+        self.parametersLayout.addWidget(self.setpointSpinBox, 23, 2)
 
         # ===== Central widget =====
         centralWidget = QWidget()
@@ -583,6 +615,15 @@ class SetupToolApp(QMainWindow):
     
     def minimumLimitChanged(self, value):
         self.logger.debug(f"Minimum output limit changed to {value}")
+
+    def controlChanged(self, control):
+        self.logger.debug(f"Control change to {control}")
+        self.pid._setuptoolControl = control
+        
+        if control:
+            self.statusBar().showMessage("Control on PID taken", 10000)
+        else:
+            self.statusBar().showMessage("Control on PID released", 10000)
 
     def setReadOnlyMode(self):
         self.readWriteLabel.setText("Read-only mode")

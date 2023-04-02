@@ -275,6 +275,9 @@ class PID:
 
         self._setpoint = 0.0
 
+        self._setuptoolControl = False
+        self._setuptoolSetpoint = 0.0
+
         # Outputs
         self.output = 0.0
         self.processValueStabilized = False
@@ -355,7 +358,11 @@ class PID:
                 self._processValueCurrStableTime = 0.0
 
             # ===== Setpoint ramp =====
-            setpointDiff = setpoint - self._setpoint
+            if not self._setuptoolControl:
+                setpointDiff = setpoint - self._setpoint
+                self._setuptoolSetpoint = setpoint
+            else:
+                setpointDiff = self._setuptoolSetpoint - self._setpoint
 
             if (self.setpointRamp is not None):
                 if (self.setpointRamp > 0.0):
