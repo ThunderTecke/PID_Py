@@ -4,8 +4,8 @@ from PySide6 import QtGui
 from PySide6.QtGui import QPainter, QActionGroup
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QDoubleSpinBox, QLabel, QFrame, QCheckBox, QTimeEdit, QScrollArea, QMenuBar, QMenu, QMessageBox
 from PySide6.QtWidgets import QHBoxLayout, QGridLayout
-from PySide6.QtCharts import QChart, QChartView, QLineSeries, QValueAxis    
-from PySide6.QtCore import QTimer, Qt, QTime
+from PySide6.QtCharts import QChart, QChartView, QLineSeries, QValueAxis
+from PySide6.QtCore import QTimer, Qt, QTime, QPointF
 
 import logging
 
@@ -75,6 +75,8 @@ class SetupToolApp(QMainWindow):
         
         self.serie = QLineSeries()
         self.serie.setName("SIN")
+
+        self.serieData = []
 
         self.alpha = 0
 
@@ -388,7 +390,7 @@ class SetupToolApp(QMainWindow):
         # ===== Refreshing timer =====
         self.refreshTimer = QTimer(self)
         self.refreshTimer.timeout.connect(self.refreshData)
-        self.refreshTimer.start(25)
+        self.refreshTimer.start(1000)
 
         self.logger.debug("SetupTool initialized")
     
@@ -396,14 +398,16 @@ class SetupToolApp(QMainWindow):
         if (self.alpha < 2*np.pi):
             self.xAxis.setRange(0, 2*np.pi)
 
-            self.serie.append(self.alpha, np.sin(self.alpha))
+            self.serieData.append(QPointF(self.alpha, np.sin(self.alpha)))
         else:
             self.xAxis.setRange(self.alpha - 2*np.pi, self.alpha)
 
-            self.serie.replace(self.serie.pointsVector()[1:])
-            self.serie.append(self.alpha, np.sin(self.alpha))
+            self.serieData.pop(0)
+            self.serieData.append(QPointF(self.alpha, np.sin(self.alpha)))
         
-        self.alpha += 0.03
+        self.serie.replace(self.serieData)
+        
+        self.alpha += 0.05
     
     def kpSetEnabled(self, enabled):
         self.kpLabel.setEnabled(enabled)
