@@ -9,7 +9,8 @@ from PySide6.QtCore import QTimer, Qt, QTime, QPointF
 
 import logging
 
-from PID_Py.PID import PID
+from PID_Py.PID import PID, HistorianParams
+from PID_Py.Simulation import Simulation as Sim
 
 import numpy as np
 
@@ -18,6 +19,7 @@ class SetupToolApp(QMainWindow):
         super().__init__()
 
         self.pid = pid
+        self.pid._setuptoolControl = False
 
         self.logger = logging.getLogger(__name__)
         handler = logging.StreamHandler(sys.stdout)
@@ -37,10 +39,18 @@ class SetupToolApp(QMainWindow):
 
         menuControl = QMenu("Control")
 
-        self.takeControlAction = QAction("Control")
-        self.takeControlAction.setCheckable(True)
-        self.takeControlAction.toggled.connect(self.controlChanged)
+        controlGroup = QActionGroup(self)
+        controlGroup.setExclusive(True)
+        self.releaseControlAction = controlGroup.addAction("Control released")
+        self.releaseControlAction.setCheckable(True)
+        self.releaseControlAction.setChecked(True)
+        self.releaseControlAction.triggered.connect(self.releaseControl)
 
+        self.takeControlAction = controlGroup.addAction("Control taken")
+        self.takeControlAction.setCheckable(True)
+        self.takeControlAction.triggered.connect(self.takeControl)
+
+        menuControl.addAction(self.releaseControlAction)
         menuControl.addAction(self.takeControlAction)
 
         menuParameters = QMenu("Parameters")
@@ -70,28 +80,32 @@ class SetupToolApp(QMainWindow):
         # TODO: Store data in a list of QPointF, and use replace to update points in the chart
         self.xAxis = QValueAxis()
         self.xAxis.setTitleText("Time (s)")
-        self.xAxis.setRange(0, 2*np.pi)
+        self.xAxis.setRange(0, 60)
 
         self.yAxis = QValueAxis()
-        self.yAxis.setTitleText("Sin")
-        self.yAxis.setRange(-1, 1)
+        self.yAxis.setRange(0, 10)
 
         self.chart = QChart()
         self.chart.addAxis(self.xAxis, Qt.AlignmentFlag.AlignBottom)
         self.chart.addAxis(self.yAxis, Qt.AlignmentFlag.AlignLeft)
 
-        self.chart.setTitle("Title")
-        
-        self.serie = QLineSeries()
-        self.serie.setName("SIN")
+        self.chart.setTitle("Historian")
 
-        self.serieData = []
+        self.series = {}
+        self.seriesData = {}
+
+        for k in self.pid.historian.keys():
+            self.series[k] = QLineSeries()
+            self.series[k].setName(k)
+
+            self.chart.addSeries(self.series[k])
+
+            self.series[k].attachAxis(self.xAxis)
+            self.series[k].attachAxis(self.yAxis)
+
+            self.seriesData[k] = []
 
         self.alpha = 0
-
-        self.chart.addSeries(self.serie)
-        self.serie.attachAxis(self.xAxis)
-        self.serie.attachAxis(self.yAxis)
 
         self.chartView = QChartView(self.chart)
         self.chartView.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -395,15 +409,19 @@ class SetupToolApp(QMainWindow):
         setpointControlLabel.setStyleSheet("font-size: 24px")
 
         self.setpointLabel = QLabel("Setpoint")
+        self.setpointLabel.setEnabled(False)
+
         self.setpointSpinBox = QDoubleSpinBox()
         self.setpointSpinBox.setEnabled(False)
         
         self.applySetpointPushButton = QPushButton("Apply")
+        self.applySetpointPushButton.setEnabled(False)
 
         self.parametersLayout.addWidget(setpointControlLabel, 22, 0, 1, 3)
 
         self.parametersLayout.addWidget(self.setpointLabel, 23, 1)
         self.parametersLayout.addWidget(self.setpointSpinBox, 23, 2)
+        self.parametersLayout.addWidget(self.applySetpointPushButton, 24, 1, 1, 2)
 
         # ===== Central widget =====
         centralWidget = QWidget()
@@ -430,16 +448,19 @@ class SetupToolApp(QMainWindow):
         if (self.alpha < 2*np.pi):
             self.xAxis.setRange(0, 2*np.pi)
 
-            self.serieData.append(QPointF(self.alpha, np.sin(self.alpha)))
+            for i in range(20):
+                self.serieData.append(QPointF(self.alpha, np.sin(self.alpha)))
+                self.alpha += 0.05
         else:
             self.xAxis.setRange(self.alpha - 2*np.pi, self.alpha)
 
             self.serieData.pop(0)
-            self.serieData.append(QPointF(self.alpha, np.sin(self.alpha)))
+            
+            for i in range(20):
+                self.serieData.append(QPointF(self.alpha, np.sin(self.alpha)))
+                self.alpha += 0.05
         
         self.serie.replace(self.serieData)
-        
-        self.alpha += 0.05
     
     def kpSetEnabled(self, enabled):
         self.kpLabel.setEnabled(enabled)
@@ -495,6 +516,11 @@ class SetupToolApp(QMainWindow):
     def minimumLimitSetEnabled(self, enabled):
         self.outputLimitMinEnableCheckBox.setEnabled(enabled)
         self.outputLimitMinSpinBox.setEnabled(enabled and (self.outputLimitMinEnableCheckBox.checkState() == Qt.CheckState.Checked))
+    
+    def setpointControlSetEnabled(self, enabled):
+        self.setpointLabel.setEnabled(enabled)
+        self.setpointSpinBox.setEnabled(enabled)
+        self.applySetpointPushButton.setEnabled(enabled)
     
     def enableWidgets(self):
         self.kpSetEnabled(True)
@@ -615,15 +641,22 @@ class SetupToolApp(QMainWindow):
     
     def minimumLimitChanged(self, value):
         self.logger.debug(f"Minimum output limit changed to {value}")
+    
+    def applySetpoint(self):
+        if (self.pid._setuptoolControl):
+            self.pid._setuptoolSetpoint = self.setpointSpinBox.value()
+    
+    def takeControl(self):
+        self.logger.debug("Control taken")
+        self.pid._setuptoolControl = True
+        self.setpointControlSetEnabled(True)
+        self.statusBar().showMessage("Control on PID taken", 10000)
 
-    def controlChanged(self, control):
-        self.logger.debug(f"Control change to {control}")
-        self.pid._setuptoolControl = control
-        
-        if control:
-            self.statusBar().showMessage("Control on PID taken", 10000)
-        else:
-            self.statusBar().showMessage("Control on PID released", 10000)
+    def releaseControl(self):
+        self.logger.debug("Control released")
+        self.pid._setuptoolControl = False
+        self.setpointControlSetEnabled(False)
+        self.statusBar().showMessage("Control on PID released", 10000)
 
     def setReadOnlyMode(self):
         self.readWriteLabel.setText("Read-only mode")
@@ -642,7 +675,7 @@ class SetupToolApp(QMainWindow):
 if __name__=="__main__":
     app = QApplication(sys.argv)
 
-    pid = PID(10.0, 5.0, 0.0)
+    pid = PID(10.0, 5.0, 0.0, historianParams=(HistorianParams.SETPOINT | HistorianParams.OUTPUT | HistorianParams.PROCESS_VALUE), simulation=Sim(1.0, 1.0))
 
     setupToolApp = SetupToolApp(pid=pid)
     setupToolApp.show()
