@@ -385,7 +385,7 @@ class SetupToolApp(QMainWindow):
         self.outputLimitMaxSpinBox.setEnabled(False)
         self.outputLimitMaxSpinBox.setToolTip("Maximum output")
         self.outputLimitMaxSpinBox.setToolTipDuration(5000)
-
+        self.outputLimitMaxSpinBox.setRange(0, 999999)
         self.outputLimitMaxSpinBox.setValue(0 if checked == Qt.CheckState.Unchecked else self.pid.outputLimits[1])
         self.outputLimitMaxSpinBox.valueChanged.connect(self.maximumLimitChanged)
 
@@ -407,6 +407,7 @@ class SetupToolApp(QMainWindow):
         self.outputLimitMinSpinBox.setEnabled(False)
         self.outputLimitMinSpinBox.setToolTip("Minimum output")
         self.outputLimitMinSpinBox.setToolTipDuration(5000)
+        self.outputLimitMinSpinBox.setRange(0, 999999)
         self.outputLimitMinSpinBox.setValue(0 if checked == Qt.CheckState.Unchecked else self.pid.outputLimits[0])
         self.outputLimitMinSpinBox.valueChanged.connect(self.minimumLimitChanged)
 

@@ -5,6 +5,7 @@
 - SetupTool added
 
 ### Modififed
+- ThreadedPID execution loop modified for SetupTool
 
 ### Fixed
 
