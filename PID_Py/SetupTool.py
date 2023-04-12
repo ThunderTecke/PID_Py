@@ -15,6 +15,14 @@ from PID_Py.Simulation import Simulation as Sim
 import numpy as np
 
 class SetupToolApp(QMainWindow):
+    """
+    SetupTool application class
+
+    Parameters
+    ----------
+    pid: PID_Py.PID.PID
+        The monitored PID
+    """
     def __init__(self, pid: PID) -> None:
         super().__init__()
 
@@ -489,6 +497,17 @@ class SetupToolApp(QMainWindow):
         self.logger.debug("SetupTool initialized")
     
     def refreshData(self):
+        """
+        PID data collection
+
+        Parameters
+        ----------
+            None
+        
+        Returns
+        -------
+            None
+        """
         if not self.pid._setuptoolControl:
             self.setpointSpinBox.setValue(self.pid._setuptoolSetpoint)
 
@@ -572,66 +591,231 @@ class SetupToolApp(QMainWindow):
 
     
     def kpSetEnabled(self, enabled):
+        """
+        Kp widgets enable
+
+        Parameters
+        ----------
+        enabled: bool
+
+        Returns
+        -------
+        None
+        """
         self.kpLabel.setEnabled(enabled)
         self.kpSpinBox.setEnabled(enabled)
     
     def kiSetEnabled(self, enabled):
+        """
+        Ki widgets enable
+
+        Parameters
+        ----------
+        enabled: bool
+
+        Returns
+        -------
+        None
+        """
         self.kiLabel.setEnabled(enabled)
         self.kiSpinBox.setEnabled(enabled)
     
     def kdSetEnabled(self, enabled):
+        """
+        Kd widgets enable
+
+        Parameters
+        ----------
+        enabled: bool
+
+        Returns
+        -------
+        None
+        """
         self.kdLabel.setEnabled(enabled)
         self.kdSpinBox.setEnabled(enabled)
     
     def indirectActionSetEnabled(self, enabled):
+        """
+        Indirect action widgets enable
+
+        Parameters
+        ----------
+        enabled: bool
+
+        Returns
+        -------
+        None
+        """
         self.indirectActionCheckBox.setEnabled(enabled)
     
     def proportionnalOnMeasurementSetEnabled(self, enabled):
+        """
+        Proportionnal on measurement widgets enable
+
+        Parameters
+        ----------
+        enabled: bool
+
+        Returns
+        -------
+        None
+        """
         self.proportionnalOnMeasurementCheckBox.setEnabled(enabled)
     
     def integralLimitSetEnabled(self, enabled):
+        """
+        Integral limit widgets enable
+
+        Parameters
+        ----------
+        enabled: bool
+
+        Returns
+        -------
+        None
+        """
         self.integralLimitEnableCheckBox.setEnabled(enabled)
         self.integralLimitSpinBox.setEnabled(enabled and (self.integralLimitEnableCheckBox.checkState() == Qt.CheckState.Checked))
     
     def derivativeOnMeasurementSetEnabled(self, enabled):
+        """
+        Derivative on measurement widgets enable
+
+        Parameters
+        ----------
+        enabled: bool
+
+        Returns
+        -------
+        None
+        """
         self.derivativeOnMeasurementCheckBox.setEnabled(enabled)
     
     def setpointRampSetEnabled(self, enabled):
+        """
+        Setpoint ramp widgets enable
+
+        Parameters
+        ----------
+        enabled: bool
+
+        Returns
+        -------
+        None
+        """
         self.setpointRampEnableCheckBox.setEnabled(enabled)
         self.setpointRampSpinBox.setEnabled(enabled and (self.setpointRampEnableCheckBox.checkState() == Qt.CheckState.Checked))
     
     def setpointStableSetEnabled(self, enabled):
+        """
+        Setpoint stable widgets enable
+
+        Parameters
+        ----------
+        enabled: bool
+
+        Returns
+        -------
+        None
+        """
         self.setpointStableLimitEnableCheckBox.setEnabled(enabled)
         self.setpointStableLimitSpinBox.setEnabled(enabled and (self.setpointStableLimitEnableCheckBox.checkState() == Qt.CheckState.Checked))
         self.setpointStableTimeLabel.setEnabled(enabled and (self.setpointStableLimitEnableCheckBox.checkState() == Qt.CheckState.Checked))
         self.setpointStableTimeTimeEdit.setEnabled(enabled and (self.setpointStableLimitEnableCheckBox.checkState() == Qt.CheckState.Checked))
 
     def deadbandSetEnabled(self, enabled):
+        """
+        Deadband widgets enable
+
+        Parameters
+        ----------
+        enabled: bool
+
+        Returns
+        -------
+        None
+        """
         self.deadbandEnableCheckBox.setEnabled(enabled)
         self.deadbandSpinBox.setEnabled(enabled and (self.deadbandEnableCheckBox.checkState() == Qt.CheckState.Checked))
         self.deadbandActivationTimeLabel.setEnabled(enabled and (self.deadbandEnableCheckBox.checkState() == Qt.CheckState.Checked))
         self.deadbandActivationTimeTimeEdit.setEnabled(enabled and (self.deadbandEnableCheckBox.checkState() == Qt.CheckState.Checked))
 
     def processValueStableSetEnabled(self, enabled):
+        """
+        Process value stable widgets enable
+
+        Parameters
+        ----------
+        enabled: bool
+
+        Returns
+        -------
+        None
+        """
         self.processValueStableLimitEnableCheckBox.setEnabled(enabled)
         self.processValueStableLimitSpinBox.setEnabled(enabled and (self.processValueStableLimitEnableCheckBox.checkState() == Qt.CheckState.Checked))
         self.processValueStableTimeLabel.setEnabled(enabled and (self.processValueStableLimitEnableCheckBox.checkState() == Qt.CheckState.Checked))
         self.processValueStableTimeTimeEdit.setEnabled(enabled and (self.processValueStableLimitEnableCheckBox.checkState() == Qt.CheckState.Checked))
 
     def maximumLimitSetEnabled(self, enabled):
+        """
+        Maximum output limit widgets enable
+
+        Parameters
+        ----------
+        enabled: bool
+
+        Returns
+        -------
+        None
+        """
         self.outputLimitMaxEnableCheckBox.setEnabled(enabled)
         self.outputLimitMaxSpinBox.setEnabled(enabled and (self.outputLimitMaxEnableCheckBox.checkState() == Qt.CheckState.Checked))
     
     def minimumLimitSetEnabled(self, enabled):
+        """
+        Minimum output limit widgets enable
+
+        Parameters
+        ----------
+        enabled: bool
+
+        Returns
+        -------
+        None
+        """
         self.outputLimitMinEnableCheckBox.setEnabled(enabled)
         self.outputLimitMinSpinBox.setEnabled(enabled and (self.outputLimitMinEnableCheckBox.checkState() == Qt.CheckState.Checked))
     
     def setpointControlSetEnabled(self, enabled):
+        """
+        Setpoint control widgets enable
+
+        Parameters
+        ----------
+        enabled: bool
+
+        Returns
+        -------
+        None
+        """
         self.setpointLabel.setEnabled(enabled)
         self.setpointSpinBox.setEnabled(enabled)
         self.applySetpointPushButton.setEnabled(enabled)
     
     def enableWidgets(self):
+        """
+        Enable all parameters widgets
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        None
+        """
         self.kpSetEnabled(True)
         self.kiSetEnabled(True)
         self.kdSetEnabled(True)
@@ -649,6 +833,17 @@ class SetupToolApp(QMainWindow):
         self.logger.debug("Widgets parameters enabled")
 
     def disableWidgets(self):
+        """
+        Disable all parameters widgets
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        None
+        """
         self.kpSetEnabled(False)
         self.kiSetEnabled(False)
         self.kdSetEnabled(False)
@@ -666,49 +861,169 @@ class SetupToolApp(QMainWindow):
         self.logger.debug("Widgets parameters disabled")
     
     def kpChanged(self, value):
+        """
+        Kp changed slot
+
+        Parameters
+        ----------
+        value: float
+            New value
+        
+        Returns
+        -------
+        None
+        """
         self.logger.debug(f"Kp value changed to {value:.2f}")
         self.pid.kp = value
     
     def kiChanged(self, value):
+        """
+        Ki changed slot
+
+        Parameters
+        ----------
+        value: float
+            New value
+        
+        Returns
+        -------
+        None
+        """
         self.logger.debug(f"Ki value changed to {value:.2f}")
         self.pid.ki = value
 
     def kdChanged(self, value):
+        """
+        Kd changed slot
+
+        Parameters
+        ----------
+        value: float
+            New value
+        
+        Returns
+        -------
+        None
+        """
         self.logger.debug(f"Kd value changed to {value:.2f}")
         self.pid.kd = value
 
     def indirectActionChanged(self, state):
+        """
+        Indirect action changed slot
+
+        Parameters
+        ----------
+        state: float
+            New state
+        
+        Returns
+        -------
+        None
+        """
         state = Qt.CheckState(state)
         self.logger.debug(f"Indirect action changed to {state}")
         self.pid.indirectAction = (state == Qt.CheckState.Checked)
     
     def proportionnalOnMeasurementChanged(self, state):
+        """
+        Proportionnal on measurement changed slot
+
+        Parameters
+        ----------
+        state: float
+            New state
+        
+        Returns
+        -------
+        None
+        """
         state = Qt.CheckState(state)
         self.logger.debug(f"Proportionnal on measurement changed to {state}")
         self.pid.proportionnalOnMeasurement = (state == Qt.CheckState.Checked)
     
     def integralLimitEnableChanged(self, state):
+        """
+        Integral limit enable changed slot
+
+        Parameters
+        ----------
+        state: float
+            New state
+        
+        Returns
+        -------
+        None
+        """
         state = Qt.CheckState(state)
         self.logger.debug(f"Integral limit enable changed to {state}")
         self.integralLimitSetEnabled(True)
         self.pid.integralLimit = self.integralLimitSpinBox.value() if (state == Qt.CheckState.Checked) else None
     
     def integralLimitChanged(self, value):
+        """
+        Integral limit changed slot
+
+        Parameters
+        ----------
+        value: float
+            New value
+        
+        Returns
+        -------
+        None
+        """
         self.logger.debug(f"Integral limit changed to {value}")
         self.pid.integralLimit = value if (self.integralLimitEnableCheckBox.checkState() == Qt.CheckState.Checked) else None
 
     def derivativeOnMeasurementChanged(self, state):
+        """
+        Derivative on measurement enable changed slot
+
+        Parameters
+        ----------
+        state: float
+            New state
+        
+        Returns
+        -------
+        None
+        """
         state = Qt.CheckState(state)
         self.logger.debug(f"Derivative on measurement changed to {state}")
         self.pid.derivativeOnMeasurement = (state == Qt.CheckState.Checked)
 
     def setpointRampEnableChanged(self, state):
+        """
+        Setpoint ramp enable changed slot
+
+        Parameters
+        ----------
+        state: float
+            New state
+        
+        Returns
+        -------
+        None
+        """
         state = Qt.CheckState(state)
         self.logger.debug(f"Setpoint ramp enable changed to {state}")
         self.setpointRampSetEnabled(True)
         self.pid.setpointRamp = self.setpointRampSpinBox.value() if (state == Qt.CheckState.Checked) else None
     
     def setpointRampChanged(self, value):
+        """
+        Setpoint ramp changed slot
+
+        Parameters
+        ----------
+        value: float
+            New value
+        
+        Returns
+        -------
+        None
+        """
         self.logger.debug(f"Setpoint ramp changed to {value}")
         self.pid.setpointRamp = value if (self.setpointRampEnableCheckBox.checkState() == Qt.CheckState.Checked) else None
     
