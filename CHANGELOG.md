@@ -1,5 +1,13 @@
 # Change log
 
+## [1.2.0] - 2023-04-12
+### Added
+- SetupTool added
+
+### Modififed
+
+### Fixed
+
 ## [1.1.1] - 2023-03-25
 ### Added
 

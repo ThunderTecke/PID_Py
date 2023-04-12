@@ -692,7 +692,7 @@ class ThreadedPID(PID, Thread):
         See `threading.Thread` documentation for more information.
         """
         # Call PID execution to initialize time memory
-        self.compute(self.setpoint, self.processValue)
+        self.compute(self.setpoint, self.processValue if self.simulation is None else None)
         self.quit = False
         return Thread.start(self)
     
@@ -705,4 +705,4 @@ class ThreadedPID(PID, Thread):
             while time.time() < (self._lastTime + self.cycleTime):
                 time.sleep(self.cycleTime / 100.0)
 
-            self.compute(self.setpoint, self.processValue)
+            self.compute(self.setpoint, self.processValue if self.simulation is None else None)

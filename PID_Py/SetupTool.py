@@ -9,7 +9,7 @@ from PySide6.QtCore import QTimer, Qt, QTime, QPointF
 
 import logging
 
-from PID_Py.PID import PID, HistorianParams
+from PID_Py.PID import ThreadedPID, PID, HistorianParams
 from PID_Py.Simulation import Simulation as Sim
 
 import numpy as np
@@ -74,10 +74,20 @@ class SetupToolApp(QMainWindow):
 
         # ===== Status bar =====
         self.readWriteLabel = QLabel("Read-only mode")
+        self.controlLabel = QLabel("Control released")
         self.statusBar().addPermanentWidget(self.readWriteLabel)
 
+        statusSeparator = QFrame()
+        statusSeparator.setFrameShape(QFrame.Shape.VLine)
+        statusSeparator.setFrameShadow(QFrame.Shadow.Raised)
+        statusSeparator.setFixedHeight(20)
+
+        self.statusBar().addPermanentWidget(statusSeparator)
+        self.statusBar().addPermanentWidget(self.controlLabel)
+
         # ===== Real-time graph ====
-        # TODO: Store data in a list of QPointF, and use replace to update points in the chart
+        self.historianMaxNbPoint = 3000
+
         self.xAxis = QValueAxis()
         self.xAxis.setTitleText("Time (s)")
         self.xAxis.setRange(0, 60)
@@ -95,17 +105,18 @@ class SetupToolApp(QMainWindow):
         self.seriesData = {}
 
         for k in self.pid.historian.keys():
-            self.series[k] = QLineSeries()
-            self.series[k].setName(k)
+            if k != "TIME":
+                self.series[k] = QLineSeries()
+                self.series[k].setName(k)
 
-            self.chart.addSeries(self.series[k])
+                self.chart.addSeries(self.series[k])
 
-            self.series[k].attachAxis(self.xAxis)
-            self.series[k].attachAxis(self.yAxis)
+                self.series[k].attachAxis(self.xAxis)
+                self.series[k].attachAxis(self.yAxis)
 
-            self.seriesData[k] = []
+                self.seriesData[k] = []
 
-        self.alpha = 0
+        self.lastTime = None
 
         self.chartView = QChartView(self.chart)
         self.chartView.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -132,6 +143,7 @@ class SetupToolApp(QMainWindow):
         self.kpSpinBox.setMinimum(0.0)
         self.kpSpinBox.setToolTip("Proportionnal gain")
         self.kpSpinBox.setToolTipDuration(5000)
+        self.kpSpinBox.setValue(self.pid.kp)
         self.kpLabel = QLabel("Proportionnal")
         self.kpLabel.setEnabled(False)
 
@@ -144,6 +156,7 @@ class SetupToolApp(QMainWindow):
         self.kiSpinBox.setMinimum(0.0)
         self.kiSpinBox.setToolTip("Integral gain")
         self.kiSpinBox.setToolTipDuration(5000)
+        self.kiSpinBox.setValue(self.pid.ki)
         self.kiLabel = QLabel("Integral")
         self.kiLabel.setEnabled(False)
 
@@ -156,6 +169,7 @@ class SetupToolApp(QMainWindow):
         self.kdSpinBox.setMinimum(0.0)
         self.kdSpinBox.setToolTip("Derivative gain")
         self.kdSpinBox.setToolTipDuration(5000)
+        self.kdSpinBox.setValue(self.pid.kd)
         self.kdLabel = QLabel("Derivative")
         self.kdLabel.setEnabled(False)
 
@@ -187,6 +201,7 @@ class SetupToolApp(QMainWindow):
         self.indirectActionCheckBox.setEnabled(False)
         self.indirectActionCheckBox.setToolTip("Invert PID action")
         self.indirectActionCheckBox.setToolTipDuration(5000)
+        self.indirectActionCheckBox.setCheckState(Qt.CheckState.Checked if self.pid.indirectAction else Qt.CheckState.Unchecked)
 
         self.indirectActionCheckBox.stateChanged.connect(self.indirectActionChanged)
 
@@ -194,6 +209,7 @@ class SetupToolApp(QMainWindow):
         self.proportionnalOnMeasurementCheckBox.setEnabled(False)
         self.proportionnalOnMeasurementCheckBox.setToolTip("Calculate the proportionnal term on the process value")
         self.proportionnalOnMeasurementCheckBox.setToolTipDuration(5000)
+        self.proportionnalOnMeasurementCheckBox.setCheckState(Qt.CheckState.Checked if self.pid.proportionnalOnMeasurement else Qt.CheckState.Unchecked)
 
         self.proportionnalOnMeasurementCheckBox.stateChanged.connect(self.proportionnalOnMeasurementChanged)
 
@@ -201,49 +217,49 @@ class SetupToolApp(QMainWindow):
         self.integralLimitEnableCheckBox.setEnabled(False)
         self.integralLimitEnableCheckBox.setToolTip("Clamp integral term between [-value, value]")
         self.integralLimitEnableCheckBox.setToolTipDuration(5000)
-
+        self.integralLimitEnableCheckBox.setCheckState(Qt.CheckState.Checked if self.pid.integralLimit is not None else Qt.CheckState.Unchecked)
         self.integralLimitEnableCheckBox.stateChanged.connect(self.integralLimitEnableChanged)
 
         self.integralLimitSpinBox = QDoubleSpinBox()
         self.integralLimitSpinBox.setEnabled(False)
         self.integralLimitSpinBox.setToolTip("Clamp integral term between [-value, value]")
         self.integralLimitSpinBox.setToolTipDuration(5000)
-
+        self.integralLimitSpinBox.setValue(self.pid.integralLimit if self.pid.integralLimit is not None else 0)
         self.integralLimitSpinBox.valueChanged.connect(self.integralLimitChanged)
 
         self.derivativeOnMeasurementCheckBox = QCheckBox("Derivative on measurement")
         self.derivativeOnMeasurementCheckBox.setEnabled(False)
         self.derivativeOnMeasurementCheckBox.setToolTip("Calculate the derivative term on the process value")
         self.derivativeOnMeasurementCheckBox.setToolTipDuration(5000)
-
+        self.derivativeOnMeasurementCheckBox.setCheckState(Qt.CheckState.Checked if self.pid.derivativeOnMeasurement else Qt.CheckState.Unchecked)
         self.derivativeOnMeasurementCheckBox.stateChanged.connect(self.derivativeOnMeasurementChanged)
 
         self.setpointRampEnableCheckBox = QCheckBox("Setpoint ramp")
         self.setpointRampEnableCheckBox.setEnabled(False)
         self.setpointRampEnableCheckBox.setToolTip("Apply a ramp on the setpoint (unit/s)")
         self.setpointRampEnableCheckBox.setToolTipDuration(5000)
-
+        self.setpointRampEnableCheckBox.setCheckState(Qt.CheckState.Checked if self.pid.setpointRamp is not None else Qt.CheckState.Unchecked)
         self.setpointRampEnableCheckBox.stateChanged.connect(self.setpointRampEnableChanged)
 
         self.setpointRampSpinBox = QDoubleSpinBox()
         self.setpointRampSpinBox.setEnabled(False)
         self.setpointRampSpinBox.setToolTip("Apply a ramp on the setpoint (unit/s)")
         self.setpointRampSpinBox.setToolTipDuration(5000)
-
+        self.setpointRampSpinBox.setValue(self.pid.setpointRamp if self.pid.setpointRamp is not None else 0)
         self.setpointRampSpinBox.valueChanged.connect(self.setpointRampChanged)
 
         self.setpointStableLimitEnableCheckBox = QCheckBox("Setpoint stable")
         self.setpointStableLimitEnableCheckBox.setEnabled(False)
         self.setpointStableLimitEnableCheckBox.setToolTip("Maximum difference between the setpoint and the process value to be considered reached")
         self.setpointStableLimitEnableCheckBox.setToolTipDuration(5000)
-
+        self.setpointStableLimitEnableCheckBox.setCheckState(Qt.CheckState.Checked if self.pid.setpointStableLimit is not None else Qt.CheckState.Unchecked)
         self.setpointStableLimitEnableCheckBox.stateChanged.connect(self.setpointStableEnableChanged)
 
         self.setpointStableLimitSpinBox = QDoubleSpinBox()
         self.setpointStableLimitSpinBox.setEnabled(False)
         self.setpointStableLimitSpinBox.setToolTip("Maximum difference between the setpoint and the process value to be considered reached")
         self.setpointStableLimitSpinBox.setToolTipDuration(5000)
-
+        self.setpointStableLimitSpinBox.setValue(self.pid.setpointStableLimit if self.pid.setpointStableLimit is not None else 0)
         self.setpointStableLimitSpinBox.valueChanged.connect(self.setpointStableChanged)
 
         self.setpointStableTimeLabel = QLabel("Setpoint stable time")
@@ -257,21 +273,21 @@ class SetupToolApp(QMainWindow):
         self.setpointStableTimeTimeEdit.setToolTipDuration(5000)
         self.setpointStableTimeTimeEdit.setDisplayFormat("hh:mm:ss")
         self.setpointStableTimeTimeEdit.setButtonSymbols(QTimeEdit.ButtonSymbols.NoButtons)
-
+        self.setpointStableTimeTimeEdit.setTime(QTime.fromMSecsSinceStartOfDay(int(self.pid.setpointStableTime*1000)))
         self.setpointStableTimeTimeEdit.timeChanged.connect(self.setpointStableTimeChanged)
 
         self.deadbandEnableCheckBox = QCheckBox("Deadband")
         self.deadbandEnableCheckBox.setEnabled(False)
         self.deadbandEnableCheckBox.setToolTip("The minimum amount of output variation to applied this variation")
         self.deadbandEnableCheckBox.setToolTipDuration(5000)
-
+        self.deadbandEnableCheckBox.setCheckState(Qt.CheckState.Checked if self.pid.deadband is not None else Qt.CheckState.Unchecked)
         self.deadbandEnableCheckBox.stateChanged.connect(self.deadbandEnableChanged)
 
         self.deadbandSpinBox = QDoubleSpinBox()
         self.deadbandSpinBox.setEnabled(False)
         self.deadbandSpinBox.setToolTip("The minimum amount of output variation to applied this variation")
         self.deadbandSpinBox.setToolTipDuration(5000)
-
+        self.deadbandSpinBox.setValue(self.pid.deadband if self.pid.deadband is not None else 0)
         self.deadbandSpinBox.valueChanged.connect(self.deadbandChanged)
 
         self.deadbandActivationTimeLabel = QLabel("Deadband activation time")
@@ -285,21 +301,21 @@ class SetupToolApp(QMainWindow):
         self.deadbandActivationTimeTimeEdit.setToolTipDuration(5000)
         self.deadbandActivationTimeTimeEdit.setDisplayFormat("hh:mm:ss")
         self.deadbandActivationTimeTimeEdit.setButtonSymbols(QTimeEdit.ButtonSymbols.NoButtons)
-
+        self.deadbandActivationTimeTimeEdit.setTime(QTime.fromMSecsSinceStartOfDay(int(self.pid.deadbandActivationTime*1000)))
         self.deadbandActivationTimeTimeEdit.timeChanged.connect(self.deadbandActivationTimeChanged)
 
         self.processValueStableLimitEnableCheckBox = QCheckBox("Process value stable")
         self.processValueStableLimitEnableCheckBox.setEnabled(False)
         self.processValueStableLimitEnableCheckBox.setToolTip("The maximum variation of the process value to be considered stable")
         self.processValueStableLimitEnableCheckBox.setToolTipDuration(5000)
-
+        self.processValueStableLimitEnableCheckBox.setCheckState(Qt.CheckState.Checked if self.pid.processValueStableLimit is not None else Qt.CheckState.Unchecked)
         self.processValueStableLimitEnableCheckBox.stateChanged.connect(self.processValueStableLimitEnableChanged)
 
         self.processValueStableLimitSpinBox = QDoubleSpinBox()
         self.processValueStableLimitSpinBox.setEnabled(False)
         self.processValueStableLimitSpinBox.setToolTip("The maximum variation of the process value to be considered stable")
         self.processValueStableLimitSpinBox.setToolTipDuration(5000)
-
+        self.processValueStableLimitSpinBox.setValue(self.pid.processValueStableLimit if self.pid.processValueStableLimit is not None else 0)
         self.processValueStableLimitSpinBox.valueChanged.connect(self.processValueStableLimitChanged)
 
         self.processValueStableTimeLabel = QLabel("Process value stable time")
@@ -313,7 +329,7 @@ class SetupToolApp(QMainWindow):
         self.processValueStableTimeTimeEdit.setToolTipDuration(5000)
         self.processValueStableTimeTimeEdit.setDisplayFormat("hh:mm:ss")
         self.processValueStableTimeTimeEdit.setButtonSymbols(QTimeEdit.ButtonSymbols.NoButtons)
-
+        self.processValueStableTimeTimeEdit.setTime(QTime.fromMSecsSinceStartOfDay(int(self.pid.processValueStableTime*1000)))
         self.processValueStableTimeTimeEdit.timeChanged.connect(self.processValueStableTimeChanged)
 
 
@@ -355,7 +371,14 @@ class SetupToolApp(QMainWindow):
         self.outputLimitMaxEnableCheckBox.setEnabled(False)
         self.outputLimitMaxEnableCheckBox.setToolTip("Maximum output")
         self.outputLimitMaxEnableCheckBox.setToolTipDuration(5000)
+        
+        checked = Qt.CheckState.Unchecked
 
+        if self.pid.outputLimits is not None:
+            if self.pid.outputLimits[1] is not None:
+                checked = Qt.CheckState.Checked
+
+        self.outputLimitMaxEnableCheckBox.setCheckState(checked)
         self.outputLimitMaxEnableCheckBox.stateChanged.connect(self.maximumLimitEnableChanged)
 
         self.outputLimitMaxSpinBox = QDoubleSpinBox()
@@ -363,6 +386,7 @@ class SetupToolApp(QMainWindow):
         self.outputLimitMaxSpinBox.setToolTip("Maximum output")
         self.outputLimitMaxSpinBox.setToolTipDuration(5000)
 
+        self.outputLimitMaxSpinBox.setValue(0 if checked == Qt.CheckState.Unchecked else self.pid.outputLimits[1])
         self.outputLimitMaxSpinBox.valueChanged.connect(self.maximumLimitChanged)
 
         self.outputLimitMinEnableCheckBox = QCheckBox("Minimum")
@@ -370,13 +394,20 @@ class SetupToolApp(QMainWindow):
         self.outputLimitMinEnableCheckBox.setToolTip("Minimum output")
         self.outputLimitMinEnableCheckBox.setToolTipDuration(5000)
 
+        checked = Qt.CheckState.Unchecked
+
+        if self.pid.outputLimits is not None:
+            if self.pid.outputLimits[0] is not None:
+                checked = Qt.CheckState.Checked
+        
+        self.outputLimitMinEnableCheckBox.setCheckState(checked)
         self.outputLimitMinEnableCheckBox.stateChanged.connect(self.minimumLimitEnableChanged)
 
         self.outputLimitMinSpinBox = QDoubleSpinBox()
         self.outputLimitMinSpinBox.setEnabled(False)
         self.outputLimitMinSpinBox.setToolTip("Minimum output")
         self.outputLimitMinSpinBox.setToolTipDuration(5000)
-
+        self.outputLimitMinSpinBox.setValue(0 if checked == Qt.CheckState.Unchecked else self.pid.outputLimits[0])
         self.outputLimitMinSpinBox.valueChanged.connect(self.minimumLimitChanged)
 
         separator2 = QFrame()
@@ -413,9 +444,11 @@ class SetupToolApp(QMainWindow):
 
         self.setpointSpinBox = QDoubleSpinBox()
         self.setpointSpinBox.setEnabled(False)
+        self.setpointSpinBox.setValue(self.pid._setuptoolSetpoint)
         
         self.applySetpointPushButton = QPushButton("Apply")
         self.applySetpointPushButton.setEnabled(False)
+        self.applySetpointPushButton.pressed.connect(self.applySetpoint)
 
         self.parametersLayout.addWidget(setpointControlLabel, 22, 0, 1, 3)
 
@@ -445,22 +478,87 @@ class SetupToolApp(QMainWindow):
         self.logger.debug("SetupTool initialized")
     
     def refreshData(self):
-        if (self.alpha < 2*np.pi):
-            self.xAxis.setRange(0, 2*np.pi)
+        if not self.pid._setuptoolControl:
+            self.setpointSpinBox.setValue(self.pid._setuptoolSetpoint)
 
-            for i in range(20):
-                self.serieData.append(QPointF(self.alpha, np.sin(self.alpha)))
-                self.alpha += 0.05
-        else:
-            self.xAxis.setRange(self.alpha - 2*np.pi, self.alpha)
-
-            self.serieData.pop(0)
-            
-            for i in range(20):
-                self.serieData.append(QPointF(self.alpha, np.sin(self.alpha)))
-                self.alpha += 0.05
+        historian = self.pid.historian
         
-        self.serie.replace(self.serieData)
+        if historian is not None:
+            if len(historian["TIME"]) >= 0:
+
+                countToAdd = 0
+
+                if self.lastTime is not None:
+                    for t in reversed(historian["TIME"]):
+                        if t <= self.lastTime:
+                            break;
+
+                        countToAdd += 1
+                else:
+                    countToAdd = -1
+
+                yMin = None
+                yMax = None
+
+                for k, v in historian.items():
+                    if k != "TIME":
+                        # First iteration, seriesData empty
+                        if countToAdd == -1:
+                            data = []
+
+                            for t, e in zip(historian["TIME"], v):
+                                data.append(QPointF(t, e))
+                            
+                            self.seriesData[k] = data
+                        
+                        # seriesData smaller than historiantMaxNbPoint
+                        elif len(historian["TIME"]) <= self.historianMaxNbPoint:
+                            for t, e in zip(historian["TIME"][-countToAdd:], v[-countToAdd:]):
+                                self.seriesData[k].append(QPointF(t, e))
+                        
+                        # seriesData larger than historianMaxNbPoint. Need to remove older sample to fit
+                        else:
+                            for t, e in zip(historian["TIME"][-countToAdd:], v[-countToAdd:]):
+                                self.seriesData[k].append(QPointF(t, e))
+                            
+                            countToRemove = len(self.seriesData[k]) - self.historianMaxNbPoint
+
+                            self.seriesData[k] = self.seriesData[k][countToRemove:]
+
+                        # Search extremums
+                        if yMin is None:
+                            yMin = self.seriesData[k][0].y()
+                        
+                        if yMax is None:
+                            yMax = self.seriesData[k][0].y()
+
+                        for e in self.seriesData[k]:
+                            yMin = e.y() if e.y() < yMin else yMin
+                            yMax = e.y() if e.y() > yMax else yMax
+
+                        # Update points
+                        self.series[k].replace(self.seriesData[k])
+
+                # Save last sample time
+                self.lastTime = historian["TIME"][-1]
+
+                # Update axis range
+
+                key = list(self.seriesData.keys())[0]
+                self.xAxis.setRange(self.seriesData[key][0].x(), self.seriesData[key][-1].x())
+
+                if yMax - yMin < 1:
+                    avg = (yMin + yMax) / 2
+
+                    yMin = avg - 0.5
+                    yMax = avg + 0.5
+
+                self.yAxis.setRange(yMin, yMax)
+            else:
+                self.logger.debug("No samples in historian")
+        else:
+            self.logger.debug("Historian not configured")
+
     
     def kpSetEnabled(self, enabled):
         self.kpLabel.setEnabled(enabled)
@@ -558,91 +656,123 @@ class SetupToolApp(QMainWindow):
     
     def kpChanged(self, value):
         self.logger.debug(f"Kp value changed to {value:.2f}")
+        self.pid.kp = value
     
     def kiChanged(self, value):
         self.logger.debug(f"Ki value changed to {value:.2f}")
+        self.pid.ki = value
 
     def kdChanged(self, value):
         self.logger.debug(f"Kd value changed to {value:.2f}")
+        self.pid.kd = value
 
     def indirectActionChanged(self, state):
         state = Qt.CheckState(state)
         self.logger.debug(f"Indirect action changed to {state}")
+        self.pid.indirectAction = (state == Qt.CheckState.Checked)
     
     def proportionnalOnMeasurementChanged(self, state):
         state = Qt.CheckState(state)
         self.logger.debug(f"Proportionnal on measurement changed to {state}")
+        self.pid.proportionnalOnMeasurement = (state == Qt.CheckState.Checked)
     
     def integralLimitEnableChanged(self, state):
         state = Qt.CheckState(state)
         self.logger.debug(f"Integral limit enable changed to {state}")
         self.integralLimitSetEnabled(True)
+        self.pid.integralLimit = self.integralLimitSpinBox.value() if (state == Qt.CheckState.Checked) else None
     
     def integralLimitChanged(self, value):
         self.logger.debug(f"Integral limit changed to {value}")
+        self.pid.integralLimit = value if (self.integralLimitEnableCheckBox.checkState() == Qt.CheckState.Checked) else None
 
     def derivativeOnMeasurementChanged(self, state):
         state = Qt.CheckState(state)
         self.logger.debug(f"Derivative on measurement changed to {state}")
+        self.pid.derivativeOnMeasurement = (state == Qt.CheckState.Checked)
 
     def setpointRampEnableChanged(self, state):
         state = Qt.CheckState(state)
         self.logger.debug(f"Setpoint ramp enable changed to {state}")
         self.setpointRampSetEnabled(True)
+        self.pid.setpointRamp = self.setpointRampSpinBox.value() if (state == Qt.CheckState.Checked) else None
     
     def setpointRampChanged(self, value):
         self.logger.debug(f"Setpoint ramp changed to {value}")
+        self.pid.setpointRamp = value if (self.setpointRampEnableCheckBox.checkState() == Qt.CheckState.Checked) else None
     
     def setpointStableEnableChanged(self, state):
         state = Qt.CheckState(state)
         self.logger.debug(f"Setpoint stable enable changed to {state}")
         self.setpointStableSetEnabled(True)
+        self.pid.setpointStableLimit = self.setpointStableLimitSpinBox.value() if (state == Qt.CheckState.Checked) else None
     
     def setpointStableChanged(self, value):
         self.logger.debug(f"Setpoint stable changed to {value}")
+        self.pid.setpointStableLimit = value if (self.setpointStableLimitEnableCheckBox.checkState() == Qt.CheckState.Checked) else None
 
     def setpointStableTimeChanged(self, time: QTime):
         self.logger.debug(f"Setpoint stable time changed to {time.toString('hh:mm:ss')}")
+        self.pid.setpointStableTime = time.msecsSinceStartOfDay() / 1000
     
     def deadbandEnableChanged(self, state):
         state = Qt.CheckState(state)
         self.logger.debug(f"Deadband enable changed to {state}")
         self.deadbandSetEnabled(True)
+        self.pid.deadband = self.deadbandSpinBox.value() if (state == Qt.CheckState.Checked) else None
     
     def deadbandChanged(self, value):
         self.logger.debug(f"Deadband changed to {value}")
+        self.pid.deadband = value if (self.deadbandEnableCheckBox.checkState() == Qt.CheckState.Checked) else None
     
     def deadbandActivationTimeChanged(self, time: QTime):
         self.logger.debug(f"Deadband activation time changed to {time.toString('hh:mm:ss')}")
+        self.pid.deadbandActivationTime = time.msecsSinceStartOfDay() / 1000
     
     def processValueStableLimitEnableChanged(self, state):
         state = Qt.CheckState(state)
         self.logger.debug(f"Process value stable enable changed to {state}")
         self.processValueStableSetEnabled(True)
+        self.pid.processValueStableLimit = self.processValueStableLimitSpinBox.value() if (state == Qt.CheckState.Checked) else None
     
     def processValueStableLimitChanged(self, value):
         self.logger.debug(f"Process value stable limit changed to {value}")
+        self.pid.processValueStableLimit = value if (self.processValueStableLimitEnableCheckBox.checkState() == Qt.CheckState.Checked) else None
     
     def processValueStableTimeChanged(self, time: QTime):
         self.logger.debug(f"Process value stable time changed to {time.toString('hh:mm:ss')}")
+        self.pid.processValueStableTime = time.msecsSinceStartOfDay() / 1000
 
     def maximumLimitEnableChanged(self, state):
         state = Qt.CheckState(state)
         self.logger.debug(f"Maximum output limit enable changed to {state}")
         self.maximumLimitSetEnabled(True)
+        
+        self.pid.outputLimits = (self.outputLimitMinSpinBox.value() if self.outputLimitMinEnableCheckBox.checkState() == Qt.CheckState.Checked else None, 
+                                 self.outputLimitMaxSpinBox.value() if self.outputLimitMaxEnableCheckBox.checkState() == Qt.CheckState.Checked else None)
     
     def maximumLimitChanged(self, value):
         self.logger.debug(f"Maximum output limit changed to {value}")
+
+        self.pid.outputLimits = (self.outputLimitMinSpinBox.value() if self.outputLimitMinEnableCheckBox.checkState() == Qt.CheckState.Checked else None, 
+                                 self.outputLimitMaxSpinBox.value() if self.outputLimitMaxEnableCheckBox.checkState() == Qt.CheckState.Checked else None)
 
     def minimumLimitEnableChanged(self, state):
         state = Qt.CheckState(state)
         self.logger.debug(f"Minimum output limit enable changed to {state}")
         self.minimumLimitSetEnabled(True)
+
+        self.pid.outputLimits = (self.outputLimitMinSpinBox.value() if self.outputLimitMinEnableCheckBox.checkState() == Qt.CheckState.Checked else None, 
+                                 self.outputLimitMaxSpinBox.value() if self.outputLimitMaxEnableCheckBox.checkState() == Qt.CheckState.Checked else None)
     
     def minimumLimitChanged(self, value):
         self.logger.debug(f"Minimum output limit changed to {value}")
+
+        self.pid.outputLimits = (self.outputLimitMinSpinBox.value() if self.outputLimitMinEnableCheckBox.checkState() == Qt.CheckState.Checked else None, 
+                                 self.outputLimitMaxSpinBox.value() if self.outputLimitMaxEnableCheckBox.checkState() == Qt.CheckState.Checked else None)
     
     def applySetpoint(self):
+        self.logger.debug(f"{self.setpointSpinBox.value()} applied on PID")
         if (self.pid._setuptoolControl):
             self.pid._setuptoolSetpoint = self.setpointSpinBox.value()
     
@@ -650,12 +780,14 @@ class SetupToolApp(QMainWindow):
         self.logger.debug("Control taken")
         self.pid._setuptoolControl = True
         self.setpointControlSetEnabled(True)
+        self.controlLabel.setText("Control taken")
         self.statusBar().showMessage("Control on PID taken", 10000)
 
     def releaseControl(self):
         self.logger.debug("Control released")
         self.pid._setuptoolControl = False
         self.setpointControlSetEnabled(False)
+        self.controlLabel.setText("Control released")
         self.statusBar().showMessage("Control on PID released", 10000)
 
     def setReadOnlyMode(self):
@@ -675,9 +807,13 @@ class SetupToolApp(QMainWindow):
 if __name__=="__main__":
     app = QApplication(sys.argv)
 
-    pid = PID(10.0, 5.0, 0.0, historianParams=(HistorianParams.SETPOINT | HistorianParams.OUTPUT | HistorianParams.PROCESS_VALUE), simulation=Sim(1.0, 1.0))
+    pid = ThreadedPID(10.0, 5.0, 0.0, cycleTime=0.01, historianParams=(HistorianParams.SETPOINT | HistorianParams.OUTPUT | HistorianParams.PROCESS_VALUE | HistorianParams.P | HistorianParams.I), simulation=Sim(1.0, 1.0), logger=logging.getLogger("PID"))
+    pid.start()
 
     setupToolApp = SetupToolApp(pid=pid)
     setupToolApp.show()
 
     app.exec()
+
+    pid.quit = True
+    pid.join()
