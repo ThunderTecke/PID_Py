@@ -125,7 +125,7 @@ class SetupToolApp(QMainWindow):
         self.parametersScrollArea = QScrollArea()
         self.parametersScrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.parametersScrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.parametersScrollArea.setFixedWidth(350)
+        self.parametersScrollArea.setFixedWidth(370)
 
         self.parametersWidget = QWidget()
 
@@ -445,6 +445,16 @@ class SetupToolApp(QMainWindow):
         self.setpointSpinBox = QDoubleSpinBox()
         self.setpointSpinBox.setEnabled(False)
         self.setpointSpinBox.setValue(self.pid._setuptoolSetpoint)
+
+        if self.outputLimitMinEnableCheckBox.checkState() == Qt.CheckState.Checked:
+            self.setpointSpinBox.setMinimum(self.outputLimitMinSpinBox.value())
+        else:
+            self.setpointSpinBox.setMinimum(-10000)
+
+        if self.outputLimitMaxEnableCheckBox.checkState() == Qt.CheckState.Checked:
+            self.setpointSpinBox.setMaximum(self.outputLimitMaxSpinBox.value())
+        else:
+            self.setpointSpinBox.setMaximum(10000)
         
         self.applySetpointPushButton = QPushButton("Apply")
         self.applySetpointPushButton.setEnabled(False)
@@ -803,17 +813,3 @@ class SetupToolApp(QMainWindow):
         else:
             self.statusBar().showMessage("Read/write mode activation cancelled", 10000)
             self.readAction.setChecked(True)
-
-if __name__=="__main__":
-    app = QApplication(sys.argv)
-
-    pid = ThreadedPID(10.0, 5.0, 0.0, cycleTime=0.01, historianParams=(HistorianParams.SETPOINT | HistorianParams.OUTPUT | HistorianParams.PROCESS_VALUE | HistorianParams.P | HistorianParams.I), simulation=Sim(1.0, 1.0), logger=logging.getLogger("PID"))
-    pid.start()
-
-    setupToolApp = SetupToolApp(pid=pid)
-    setupToolApp.show()
-
-    app.exec()
-
-    pid.quit = True
-    pid.join()
