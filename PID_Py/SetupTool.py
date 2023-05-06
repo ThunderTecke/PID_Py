@@ -1,18 +1,14 @@
 import sys
 
-from PySide6 import QtGui
-from PySide6.QtGui import QPainter, QActionGroup, QAction
-from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QDoubleSpinBox, QLabel, QFrame, QCheckBox, QTimeEdit, QScrollArea, QMenuBar, QMenu, QMessageBox, QPushButton
+from PySide6.QtGui import QPainter, QActionGroup
+from PySide6.QtWidgets import QMainWindow, QWidget, QDoubleSpinBox, QLabel, QFrame, QCheckBox, QTimeEdit, QScrollArea, QMenuBar, QMenu, QMessageBox, QPushButton
 from PySide6.QtWidgets import QHBoxLayout, QGridLayout
 from PySide6.QtCharts import QChart, QChartView, QLineSeries, QValueAxis
 from PySide6.QtCore import QTimer, Qt, QTime, QPointF
 
 import logging
 
-from PID_Py.PID import ThreadedPID, PID, HistorianParams
-from PID_Py.Simulation import Simulation as Sim
-
-import numpy as np
+from PID_Py.PID import PID
 
 class SetupToolApp(QMainWindow):
     """
@@ -1028,48 +1024,168 @@ class SetupToolApp(QMainWindow):
         self.pid.setpointRamp = value if (self.setpointRampEnableCheckBox.checkState() == Qt.CheckState.Checked) else None
     
     def setpointStableEnableChanged(self, state):
+        """
+        Setpoint stable enable changed slot
+
+        Parameters
+        ----------
+        state: float
+            New state
+        
+        Returns
+        -------
+        None
+        """
         state = Qt.CheckState(state)
         self.logger.debug(f"Setpoint stable enable changed to {state}")
         self.setpointStableSetEnabled(True)
         self.pid.setpointStableLimit = self.setpointStableLimitSpinBox.value() if (state == Qt.CheckState.Checked) else None
     
     def setpointStableChanged(self, value):
+        """
+        Setpoint stable changed slot
+
+        Parameters
+        ----------
+        value: float
+            New value
+        
+        Returns
+        -------
+        None
+        """
         self.logger.debug(f"Setpoint stable changed to {value}")
         self.pid.setpointStableLimit = value if (self.setpointStableLimitEnableCheckBox.checkState() == Qt.CheckState.Checked) else None
 
     def setpointStableTimeChanged(self, time: QTime):
+        """
+        Setpoint stable time changed slot
+
+        Parameters
+        ----------
+        time: QTime
+            New value
+        
+        Returns
+        -------
+        None
+        """
         self.logger.debug(f"Setpoint stable time changed to {time.toString('hh:mm:ss')}")
         self.pid.setpointStableTime = time.msecsSinceStartOfDay() / 1000
     
     def deadbandEnableChanged(self, state):
+        """
+        Deadband enable changed slot
+
+        Parameters
+        ----------
+        state: float
+            New state
+        
+        Returns
+        -------
+        None
+        """
         state = Qt.CheckState(state)
         self.logger.debug(f"Deadband enable changed to {state}")
         self.deadbandSetEnabled(True)
         self.pid.deadband = self.deadbandSpinBox.value() if (state == Qt.CheckState.Checked) else None
     
     def deadbandChanged(self, value):
+        """
+        Deadband changed slot
+
+        Parameters
+        ----------
+        value: float
+            New value
+        
+        Returns
+        -------
+        None
+        """
         self.logger.debug(f"Deadband changed to {value}")
         self.pid.deadband = value if (self.deadbandEnableCheckBox.checkState() == Qt.CheckState.Checked) else None
     
     def deadbandActivationTimeChanged(self, time: QTime):
+        """
+        Deadband activation time changed slot
+
+        Parameters
+        ----------
+        time: QTime
+            New value
+        
+        Returns
+        -------
+        None
+        """
         self.logger.debug(f"Deadband activation time changed to {time.toString('hh:mm:ss')}")
         self.pid.deadbandActivationTime = time.msecsSinceStartOfDay() / 1000
     
     def processValueStableLimitEnableChanged(self, state):
+        """
+        Process value stable limit enable changed slot
+
+        Parameters
+        ----------
+        state: float
+            New state
+        
+        Returns
+        -------
+        None
+        """
         state = Qt.CheckState(state)
         self.logger.debug(f"Process value stable enable changed to {state}")
         self.processValueStableSetEnabled(True)
         self.pid.processValueStableLimit = self.processValueStableLimitSpinBox.value() if (state == Qt.CheckState.Checked) else None
     
     def processValueStableLimitChanged(self, value):
+        """
+        Process value stable limit changed slot
+
+        Parameters
+        ----------
+        value: float
+            New value
+        
+        Returns
+        -------
+        None
+        """
         self.logger.debug(f"Process value stable limit changed to {value}")
         self.pid.processValueStableLimit = value if (self.processValueStableLimitEnableCheckBox.checkState() == Qt.CheckState.Checked) else None
     
     def processValueStableTimeChanged(self, time: QTime):
+        """
+        Process value stable time changed slot
+
+        Parameters
+        ----------
+        time: QTime
+            New value
+        
+        Returns
+        -------
+        None
+        """
         self.logger.debug(f"Process value stable time changed to {time.toString('hh:mm:ss')}")
         self.pid.processValueStableTime = time.msecsSinceStartOfDay() / 1000
 
     def maximumLimitEnableChanged(self, state):
+        """
+        Maximum limit enable changed slot
+
+        Parameters
+        ----------
+        state: float
+            New state
+        
+        Returns
+        -------
+        None
+        """
         state = Qt.CheckState(state)
         self.logger.debug(f"Maximum output limit enable changed to {state}")
         self.maximumLimitSetEnabled(True)
@@ -1078,12 +1194,36 @@ class SetupToolApp(QMainWindow):
                                  self.outputLimitMaxSpinBox.value() if self.outputLimitMaxEnableCheckBox.checkState() == Qt.CheckState.Checked else None)
     
     def maximumLimitChanged(self, value):
+        """
+        Maximum limit changed slot
+
+        Parameters
+        ----------
+        value: float
+            New value
+        
+        Returns
+        -------
+        None
+        """
         self.logger.debug(f"Maximum output limit changed to {value}")
 
         self.pid.outputLimits = (self.outputLimitMinSpinBox.value() if self.outputLimitMinEnableCheckBox.checkState() == Qt.CheckState.Checked else None, 
                                  self.outputLimitMaxSpinBox.value() if self.outputLimitMaxEnableCheckBox.checkState() == Qt.CheckState.Checked else None)
 
     def minimumLimitEnableChanged(self, state):
+        """
+        Minimum limit enable changed slot
+
+        Parameters
+        ----------
+        state: float
+            New state
+        
+        Returns
+        -------
+        None
+        """
         state = Qt.CheckState(state)
         self.logger.debug(f"Minimum output limit enable changed to {state}")
         self.minimumLimitSetEnabled(True)
@@ -1092,17 +1232,51 @@ class SetupToolApp(QMainWindow):
                                  self.outputLimitMaxSpinBox.value() if self.outputLimitMaxEnableCheckBox.checkState() == Qt.CheckState.Checked else None)
     
     def minimumLimitChanged(self, value):
+        """
+        Minimum limit changed slot
+
+        Parameters
+        ----------
+        value: float
+            New value
+        
+        Returns
+        -------
+        None
+        """
         self.logger.debug(f"Minimum output limit changed to {value}")
 
         self.pid.outputLimits = (self.outputLimitMinSpinBox.value() if self.outputLimitMinEnableCheckBox.checkState() == Qt.CheckState.Checked else None, 
                                  self.outputLimitMaxSpinBox.value() if self.outputLimitMaxEnableCheckBox.checkState() == Qt.CheckState.Checked else None)
     
     def applySetpoint(self):
+        """
+        Send setpoint to the PID
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        None
+        """
         self.logger.debug(f"{self.setpointSpinBox.value()} applied on PID")
         if (self.pid._setuptoolControl):
             self.pid._setuptoolSetpoint = self.setpointSpinBox.value()
     
     def takeControl(self):
+        """
+        Take control on the PID's setpoint
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        None
+        """
         self.logger.debug("Control taken")
         self.pid._setuptoolControl = True
         self.setpointControlSetEnabled(True)
@@ -1110,6 +1284,17 @@ class SetupToolApp(QMainWindow):
         self.statusBar().showMessage("Control on PID taken", 10000)
 
     def releaseControl(self):
+        """
+        Release control on the PID's setpoint
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        None
+        """
         self.logger.debug("Control released")
         self.pid._setuptoolControl = False
         self.setpointControlSetEnabled(False)
@@ -1117,11 +1302,33 @@ class SetupToolApp(QMainWindow):
         self.statusBar().showMessage("Control on PID released", 10000)
 
     def setReadOnlyMode(self):
+        """
+        Activate read-only mode on the PID's parameters
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        None
+        """
         self.readWriteLabel.setText("Read-only mode")
         self.statusBar().showMessage("Read-only mode activated", 10000)
         self.disableWidgets()
 
     def setReadWriteMode(self):
+        """
+        Activate read-write mode on the PID's parameters
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        None
+        """
         if(QMessageBox.question(self, 'Read/write mode', 'Are you sure to activate read/write mode?') == QMessageBox.StandardButton.Yes):
             self.readWriteLabel.setText("Read/write mode")
             self.statusBar().showMessage("Read/write mode activated", 10000)

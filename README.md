@@ -32,6 +32,10 @@
   - [Time simulation](#time-simulation)
   - [Threaded PID](#threaded-pid)
   - [Simulation](#simulation)
+- [SetupTool](#setuptool)
+  - [Usage](#usage-1)
+  - [Read-only and read-write mode](#read-only-and-read-write-mode)
+  - [Control on PID](#control-on-pid)
 
 ## Installation
 ```
@@ -424,3 +428,61 @@ pid = PID(kp = 2.0, ki = 5.0, kd = 0.0, simulation=simulation)
 
 command = pid(setpoint = targetValue)
 ```
+
+## SetupTool
+SetupTool is a tool to help you to configure the PID's parameters.
+A trend with the historian values is displayed to show the PID behaviour.
+
+### Usage
+To use SetupTool you need to import QApplication from PySide6.QtWidgets, then create an application and instantiate SetupTool.
+
+After the SetupTool is open, you can see real-time chart updated every second, and on the right all PID's parameters you can adjust in read-write mode.
+
+After having taken control on the setpoint, you can also send a new setpoint to the PID.
+
+```Python
+# PID imports
+from PID_Py.PID import PID, ThreadedPID, HistorianParams
+from PID_Py.SetupTool import SetupToolApp
+from PID_Py.Simulation import Simulation
+
+# PySide6 (PyQt) imports
+from PySide6.QtWidgets import QApplication
+
+import sys
+
+# Threaded PID creation
+pid = ThreadedPID(kp=1, ki=0, kd=0.0, 
+                  cycleTime=0.01, 
+                  historianParams=HistorianParams.SETPOINT | HistorianParams.PROCESS_VALUE, 
+                  simulation=Simulation(1, 1))
+pid.start()
+
+# PyQt application creation
+app = QApplication(sys.argv)
+
+# SetupTool instantiation
+setupToolApp = SetupToolApp(pid)
+setupToolApp.show()
+
+# Application execution
+app.exec()
+
+# Application ended, stop the PID
+pid.quit = True
+pid.join()
+```
+
+In the example above, a threaded PId is created and gave to SetupTool constructor.
+
+If have a not threaded PID, you can execute PyQt application in a parallel thread.
+
+### Read-only and read-write mode
+When SetupTool is instantiate the read-only mode is activated. This mode prevent any modification on the PID's parameters.
+
+If you want to modify PID's parameters you need to switch on read-write mode. Then all parameters are unlocked.
+
+### Control on PID
+When SetulTool is instantiate, you don't have the control on the setpoint.
+
+If you want to override setpoint, you need to take the control. Then the setpoint is unlocked. Write the new setpoint and then click on "apply".
