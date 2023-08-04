@@ -1,5 +1,13 @@
 # Change log
 
+## [1.2.1] - 2023-05-06
+### Added
+
+### Modififed
+
+### Fixed
+- Bug on basic initialization code #1 issue fix, exception when  initialize a PID without historian parameters.
+
 ## [1.2.0] - 2023-05-06
 ### Added
 - SetupTool added
