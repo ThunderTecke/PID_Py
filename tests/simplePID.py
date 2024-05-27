@@ -6,7 +6,7 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 
-pid = PID.PID(kp = 1.0, ki = 0.1, kd = 0.0, logger="PID", simulation=Sim.Simulation(1.0, 0.1), historianParams=(HistParams.ERROR | HistParams.OUTPUT | HistParams.PROCESS_VALUE | HistParams.SETPOINT | HistParams.P | HistParams.I | HistParams.D))
+pid = PID.PID(kp = 1.0, ki = 0.1, kd = 0.0, logger="PID", simulation=Sim.Simulation(1.0, 0.1), historianParams=(HistParams.ERROR | HistParams.OUTPUT | HistParams.PROCESS_VALUE | HistParams.SETPOINT | HistParams.P | HistParams.I | HistParams.D), historianLenght=1000)
 
 startTime = time.time()
 setpoint = 0.0

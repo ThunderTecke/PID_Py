@@ -480,49 +480,49 @@ class PID:
                     self.historian["P"].append(self._p)
                     
                     if len(self.historian["P"]) > self.historianLenght:
-                        del self.historianLenght["P"][0]
+                        del self.historian["P"][0]
                 
                 if HistorianParams.I in self.historianParams:
                     self.historian["I"].append(self._i)
                     
                     if len(self.historian["I"]) > self.historianLenght:
-                        del self.historianLenght["I"][0]
+                        del self.historian["I"][0]
 
                 if HistorianParams.D in self.historianParams:
                     self.historian["D"].append(self._d)
                     
                     if len(self.historian["D"]) > self.historianLenght:
-                        del self.historianLenght["D"][0]
+                        del self.historian["D"][0]
                 
                 if HistorianParams.OUTPUT in self.historianParams:
                     self.historian["OUTPUT"].append(self.output)
                     
                     if len(self.historian["OUTPUT"]) > self.historianLenght:
-                        del self.historianLenght["OUTPUT"][0]
+                        del self.historian["OUTPUT"][0]
                 
                 if HistorianParams.SETPOINT in self.historianParams:
                     self.historian["SETPOINT"].append(self._setpoint)
                     
                     if len(self.historian["SETPOINT"]) > self.historianLenght:
-                        del self.historianLenght["SETPOINT"][0]
+                        del self.historian["SETPOINT"][0]
                 
                 if HistorianParams.PROCESS_VALUE in self.historianParams:
                     self.historian["PROCESS_VALUE"].append(processValue)
                     
                     if len(self.historian["PROCESS_VALUE"]) > self.historianLenght:
-                        del self.historianLenght["PROCESS_VALUE"][0]
+                        del self.historian["PROCESS_VALUE"][0]
 
                 if HistorianParams.ERROR in self.historianParams:
                     self.historian["ERROR"].append(error)
                     
                     if len(self.historian["ERROR"]) > self.historianLenght:
-                        del self.historianLenght["ERROR"][0]
+                        del self.historian["ERROR"][0]
 
                 if (HistorianParams.P in self.historianParams) or (HistorianParams.I in self.historianParams) or (HistorianParams.D in self.historianParams) or (HistorianParams.ERROR in self.historianParams) or (HistorianParams.OUTPUT in self.historianParams) or (HistorianParams.PROCESS_VALUE in self.historianParams) or (HistorianParams.SETPOINT in self.historianParams):
                     self.historian["TIME"].append(actualTime - self._startTime)
                     
                     if len(self.historian["TIME"]) > self.historianLenght:
-                        del self.historianLenght["TIME"][0]
+                        del self.historian["TIME"][0]
             
             # ===== Saving data for next execution =====
             self._lastError = error

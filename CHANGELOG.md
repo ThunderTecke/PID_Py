@@ -1,5 +1,13 @@
 # Change log
 
+## [1.2.2] - 2024-05-27
+### Added
+
+### Modififed
+
+### Fixed
+- Bug on the historian when the maximum element is reached #3.
+
 ## [1.2.1] - 2023-05-06
 ### Added
 
